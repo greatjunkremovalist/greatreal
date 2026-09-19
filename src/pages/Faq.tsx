@@ -1,0 +1,76 @@
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { TrustRibbon } from '../components/TrustRibbon';
+import { CtaBanner } from '../components/CtaBanner';
+import { useNavigate } from 'react-router-dom';
+import { FAQS } from '../data/faqs';
+
+interface FaqProps {
+  onOpenCall: () => void;
+}
+
+export const Faq: React.FC<FaqProps> = ({ onOpenCall }) => {
+  const navigate = useNavigate();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <>
+      <div className="bg-[#f8fafc] py-16 sm:py-24 border-b border-slate-200">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-[#091b2f] tracking-tight mb-4">
+            Frequently Asked Questions
+          </h1>
+          <p className="text-lg text-slate-800">
+            Everything you need to know about our Melbourne junk removal services.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="space-y-4">
+          {FAQS.map((faq, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <div
+                key={faq.question}
+                className={`bg-white border rounded-xl overflow-hidden transition-all ${
+                  isOpen ? 'border-[#84d800] shadow-md' : 'border-slate-200 shadow-sm'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="w-full text-left px-6 py-5 flex items-center justify-between focus:outline-none"
+                  aria-expanded={isOpen}
+                >
+                  <span className="font-bold text-slate-800 pr-4">{faq.question}</span>
+                  <ChevronDown
+                    className={`w-5 h-5 text-[#84d800] transform transition-transform duration-300 flex-shrink-0 ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? 'max-h-96 pb-5 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <p className="text-slate-800 leading-relaxed pt-2 border-t border-slate-100">
+                    {faq.answer}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <TrustRibbon />
+
+      <CtaBanner
+        onQuoteClick={() => navigate('/quote')}
+        onCallClick={onOpenCall}
+      />
+    </>
+  );
+};
