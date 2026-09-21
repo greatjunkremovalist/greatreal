@@ -239,7 +239,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCall }) => {
               }}
               className="w-full flex items-center justify-center gap-2 py-3 bg-[#84d800] text-[#0a1c32] font-bold rounded-lg shadow"
             >
-              <span>Call Us: 1300 586 573</span>
+              <span>Call Us: 0451 198 226</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
           </div>

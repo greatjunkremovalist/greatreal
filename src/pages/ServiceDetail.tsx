@@ -197,7 +197,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
               className="inline-flex items-center gap-2 px-7 py-3.5 border border-white/30 hover:bg-white/10 text-white font-bold rounded-xl transition-colors"
             >
               <Phone className="w-4 h-4" />
-              Call 0480 557 454
+              Call 0451 198 226
             </button>
           </div>
         </div>

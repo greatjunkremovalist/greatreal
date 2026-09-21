@@ -105,7 +105,7 @@ export const Hero: React.FC<HeroProps> = ({
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-8 sm:pb-10 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center min-h-[calc(100svh-5.5rem)] lg:min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
           {/* Left: brand message */}
           <div className="lg:col-span-5 text-white space-y-4 sm:space-y-5 lg:space-y-4 lg:pr-4">
             <p className="text-[#84d800] font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase">
@@ -143,10 +143,10 @@ export const Hero: React.FC<HeroProps> = ({
             </p>
           </div>
 
-          {/* Right: polished quote form — no internal scroll on desktop */}
+          {/* Right: full quote form — no internal scroll */}
           <div className="lg:col-span-7 lg:pl-2" id="hero-quote">
-            <div className="relative bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] border border-white/30 max-h-[min(70vh,620px)] overflow-y-auto overflow-x-hidden lg:max-h-none lg:overflow-hidden">
-              {/* Accent strip — follows form curve via overflow-hidden on desktop */}
+            <div className="relative bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] border border-white/30 overflow-hidden">
+              {/* Accent strip — clipped to card radius via overflow-hidden */}
               <div className="h-1.5 w-full bg-gradient-to-r from-[#84d800] via-[#6bb500] to-[#032b4c]" />
 
               {/* Form header */}

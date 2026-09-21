@@ -70,7 +70,7 @@ export const PrivacyPolicy: React.FC<PrivacyProps> = ({ onOpenCall }) => {
             </p>
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-4">
               <p className="mb-2"><strong>Great Junk Removalist</strong></p>
-              <p className="mb-2"><strong>Phone:</strong> 0480 557 454</p>
+              <p className="mb-2"><strong>Phone:</strong> <a href="tel:0451198226" className="hover:text-[#74cb00]">0451 198 226</a></p>
               <p className="mb-0"><strong>Email:</strong> info@greatjunkremovalist.com.au</p>
             </div>
           </div>

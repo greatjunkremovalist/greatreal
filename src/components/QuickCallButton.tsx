@@ -71,7 +71,7 @@ export const QuickCallButton: React.FC<QuickCallButtonProps> = ({ onOpenCallModa
             <div className="space-y-2.5">
               {/* Option 1: Call Us */}
               <a
-                href="tel:0480557454"
+                href="tel:0451198226"
                 id="quick-option-call"
                 onClick={() => setIsOpen(false)}
                 className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-[#eaf8dd]/60 border border-slate-200/70 hover:border-[#74cb00]/50 transition-all duration-200"
@@ -85,7 +85,7 @@ export const QuickCallButton: React.FC<QuickCallButtonProps> = ({ onOpenCallModa
                       Call Us
                       <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#eaf8dd] text-[#559400]">Direct</span>
                     </div>
-                    <div className="text-xs font-semibold text-slate-800">0480 557 454</div>
+                    <div className="text-xs font-semibold text-slate-800">0451 198 226</div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#74cb00] group-hover:translate-x-0.5 transition-all" />
@@ -93,7 +93,7 @@ export const QuickCallButton: React.FC<QuickCallButtonProps> = ({ onOpenCallModa
 
               {/* Option 2: WhatsApp */}
               <a
-                href="https://wa.me/61480557454?text=Hi%20Great%20Junk%20Removalist%2C%20I%20would%20like%20to%20get%20a%20quote"
+                href="https://wa.me/61451198226?text=Hi%20Great%20Junk%20Removalist%2C%20I%20would%20like%20to%20get%20a%20quote"
                 target="_blank"
                 rel="noopener noreferrer"
                 id="quick-option-whatsapp"
@@ -128,7 +128,7 @@ export const QuickCallButton: React.FC<QuickCallButtonProps> = ({ onOpenCallModa
                   }}
                   className="w-full text-center py-1.5 text-[11px] font-medium text-slate-700 hover:text-slate-900 transition"
                 >
-                  Toll-Free 1300 586 573 &amp; Hours Info →
+                  More call options &amp; hours →
                 </button>
               )}
             </div>

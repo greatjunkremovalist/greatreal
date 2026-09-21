@@ -46,19 +46,19 @@ export const CallModal: React.FC<CallModalProps> = ({ isOpen, onClose }) => {
           {/* Primary Phone Button */}
           <div className="space-y-2.5 pt-2">
             <a
-              href="tel:1300586573"
+              href="tel:0451198226"
               className="w-full flex items-center justify-center gap-3 py-3.5 px-5 bg-[#84d800] hover:bg-[#77c900] active:scale-[0.98] text-[#091b2f] font-extrabold text-lg rounded-xl shadow-md transition-all"
             >
               <Phone className="w-5 h-5" />
-              <span>1300 586 573</span>
+              <span>0451 198 226</span>
             </a>
 
             <a
-              href="tel:0488858657"
+              href="sms:0451198226"
               className="w-full flex items-center justify-center gap-3 py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm rounded-xl transition-all"
             >
               <MessageSquare className="w-4 h-4 text-slate-800" />
-              <span>Direct Mobile / SMS: 0488 858 657</span>
+              <span>SMS: 0451 198 226</span>
             </a>
           </div>
 

@@ -47,10 +47,10 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({ onOpenCall }) => {
         <p className="mb-2 text-center text-[11px] font-medium text-slate-600">
           Same-day junk removal across Melbourne ·{' '}
           <a
-            href="tel:0480557454"
+            href="tel:0451198226"
             className="font-bold text-[#091b2f] underline decoration-[#84d800] decoration-2 underline-offset-2"
           >
-            0480 557 454
+            0451 198 226
           </a>
         </p>
 

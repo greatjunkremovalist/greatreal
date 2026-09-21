@@ -11,7 +11,7 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({ onQuoteClick, onCallClick 
     if (onCallClick) {
       onCallClick();
     } else {
-      window.location.href = 'tel:1300586573';
+      window.location.href = 'tel:0451198226';
     }
   };
 

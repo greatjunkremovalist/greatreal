@@ -83,7 +83,11 @@ export const Footer: React.FC = () => {
           {/* Column 4: Contact Us */}
           <div className="space-y-4">
             <h4 className="text-lg font-medium mb-6 text-white">Contact us</h4>
-            <p className="text-slate-200 text-base">0480 557 454</p>
+            <p className="text-slate-200 text-base">
+              <a href="tel:0451198226" className="hover:text-[#74cb00] transition-colors">
+                0451 198 226
+              </a>
+            </p>
             <p className="text-slate-200">info@greatjunkremovalist.com.au</p>
             
             <div className="w-full h-40 bg-slate-800 rounded-md overflow-hidden mt-4 mb-6">
