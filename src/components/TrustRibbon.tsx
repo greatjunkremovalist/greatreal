@@ -11,16 +11,16 @@ import {
 } from 'lucide-react';
 
 const TRUST_ITEMS = [
-  { id: 'fast', label: 'Fast & reliable', Icon: Check },
-  { id: 'residential', label: 'Residential & commercial', Icon: Check },
-  { id: 'eco', label: 'Eco-friendly approach', Icon: Leaf },
+  { id: 'fast', label: 'Fast junk removal', Icon: Check },
+  { id: 'residential', label: 'Home & business rubbish', Icon: Check },
+  { id: 'eco', label: 'Eco-friendly disposal', Icon: Leaf },
   { id: 'insured', label: 'Fully insured ($20M)', Icon: Shield },
-  { id: 'sameday', label: 'Same-day clearouts', Icon: Clock },
+  { id: 'sameday', label: 'Same-day Melbourne clearouts', Icon: Clock },
   { id: 'trucks', label: 'Purpose-built trucks', Icon: Truck },
   { id: 'recycle', label: 'Sorted for recycling', Icon: Recycle },
   { id: 'licensed', label: 'Licensed Melbourne crew', Icon: BadgeCheck },
   { id: 'suburbs', label: 'All Melbourne suburbs', Icon: MapPin },
-  { id: 'pricing', label: 'Transparent pricing', Icon: Check },
+  { id: 'pricing', label: 'Transparent all-inclusive pricing', Icon: Check },
 ] as const;
 
 export const TrustRibbon: React.FC = () => {

@@ -16,9 +16,9 @@ const STORAGE_KEY = 'gjr_customer_stories_v2';
 const AUTO_SLIDE_INTERVAL = 4500;
 
 const AI_SUMMARY_POINTS = [
-  'Careful, polite crews — no property damage.',
-  'Fast service — many jobs done in under an hour.',
-  'Clear pricing with no surprise tip fees.',
+  'Careful Melbourne junk removal crews — no property damage.',
+  'Fast rubbish clearance — many jobs done in under an hour.',
+  'Clear all-inclusive pricing with no surprise tip fees.',
 ];
 
 export const CustomerStories: React.FC = () => {
@@ -134,8 +134,8 @@ export const CustomerStories: React.FC = () => {
     <section className="w-full bg-[#f3f4f6] py-8 sm:py-10" id="reviews">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-[#2d3748] mb-5 sm:mb-6 tracking-tight">
-          Real Stories from{' '}
-          <span className="text-[#84d800]">Satisfied Customers</span>
+          Melbourne Junk Removal{' '}
+          <span className="text-[#84d800]">Customer Reviews</span>
         </h2>
 
         <div

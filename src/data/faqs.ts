@@ -5,28 +5,28 @@ export type FaqItem = {
 
 export const FAQS: FaqItem[] = [
   {
-    question: 'What types of junk do you remove?',
+    question: 'What types of junk and rubbish do you remove in Melbourne?',
     answer:
-      'We take almost everything! This includes old furniture, mattresses, appliances, white goods, green waste, renovation debris, e-waste, office equipment, and general household rubbish. We cannot take hazardous materials like asbestos, chemicals, or wet paint.',
+      'Great Junk Removalist removes almost all household and commercial junk across Melbourne — old furniture, mattresses, appliances, whitegoods, green waste, renovation debris, e-waste, office equipment and general rubbish. We cannot take hazardous materials such as asbestos, chemicals or wet paint.',
   },
   {
-    question: 'Do you offer same-day service?',
+    question: 'Do you offer same-day junk removal in Melbourne?',
     answer:
-      "Yes! We offer same-day and next-day rubbish removal services across Melbourne. It's best to call us early in the day to secure a spot, but we'll always do our best to accommodate urgent requests.",
+      'Yes. We offer same-day and next-day rubbish removal across Greater Melbourne. Call early on 0451 198 226 to secure a same-day slot — we always try to accommodate urgent clearances.',
   },
   {
-    question: 'How do you charge for rubbish removal?',
+    question: 'How much does rubbish removal cost in Melbourne?',
     answer:
-      'We charge based on volume (cubic metres) - you only pay for the exact space your junk takes up in our truck. Our pricing includes two strong team members, all heavy lifting, loading, and disposal fees. No hidden costs or surprise dump fees.',
+      'We charge by volume (cubic metres) — you only pay for the space your junk takes in our truck. Pricing is all-inclusive: two crew members, heavy lifting, loading and disposal fees. No hidden tip or dump charges after the job.',
   },
   {
-    question: 'Do I need to put the rubbish on the nature strip?',
+    question: 'Do I need to put junk on the nature strip for collection?',
     answer:
-      'Not at all. We provide a full hands-off service. Whether your junk is in the backyard, upstairs, in the garage, or under the house, our team will go in and get it. We even sweep up the area afterwards.',
+      'No. Our Melbourne junk removal service is fully hands-off. Whether items are in the backyard, upstairs, garage or under the house, our team collects from where they sit and sweeps the area afterwards.',
   },
   {
-    question: 'What happens to the junk once you take it?',
+    question: 'What happens to my junk after you remove it?',
     answer:
-      "We are committed to eco-friendly disposal. We sort the load in our trucks to ensure recyclable materials (metals, e-waste, timber) go to recycling centres, and items in good condition are donated. Only what truly can't be salvaged goes to landfill.",
+      'We prioritise eco-friendly disposal. Loads are sorted so metals, e-waste and timber go to recycling centres, and usable items are donated when possible. Only materials that cannot be salvaged go to landfill.',
   },
 ];

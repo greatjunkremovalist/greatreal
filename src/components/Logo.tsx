@@ -36,7 +36,7 @@ export const Logo: React.FC<LogoProps> = ({
       <div className="relative shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
         <img
           src="/images/logo.png"
-          alt="Great Junk Removalist Logo"
+          alt="Great Junk Removalist Melbourne — junk and rubbish removal logo"
           className={`${imgHeight} w-auto object-contain drop-shadow-sm filter`}
           loading="eager"
         />

@@ -106,7 +106,7 @@ export const WorkShowcase: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
           <div className="text-center sm:text-left">
             <h3 className="text-lg sm:text-xl font-bold text-[#091b2f]">
-              Before &amp; After Transformation Showcase
+              Melbourne Junk Removal Before &amp; After
             </h3>
             <p className="text-xs text-slate-700 flex items-center justify-center sm:justify-start gap-2 mt-0.5">
               <span>{currentJob.title}</span>
@@ -173,7 +173,7 @@ export const WorkShowcase: React.FC = () => {
               <div className="relative h-full w-full overflow-hidden border-r border-white/20 bg-slate-950">
                 <img
                   src={currentJob.beforeImage}
-                  alt={`${currentJob.title} before removal`}
+                  alt={`${currentJob.title} before Melbourne junk removal`}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -196,7 +196,7 @@ export const WorkShowcase: React.FC = () => {
               <div className="relative h-full w-full overflow-hidden bg-slate-950">
                 <img
                   src={currentJob.afterImage}
-                  alt={`${currentJob.title} after cleanup`}
+                  alt={`${currentJob.title} after Melbourne junk removal cleanup`}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -261,7 +261,7 @@ export const WorkShowcase: React.FC = () => {
             <div className="absolute inset-0 w-full h-full">
               <img
                 src={currentJob.afterImage}
-                alt={`${currentJob.title} after cleanup`}
+                alt={`${currentJob.title} after Melbourne junk removal cleanup`}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -286,7 +286,7 @@ export const WorkShowcase: React.FC = () => {
             >
               <img
                 src={currentJob.beforeImage}
-                alt={`${currentJob.title} before cleanup`}
+                alt={`${currentJob.title} before Melbourne junk removal`}
                 className="absolute inset-0 w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />

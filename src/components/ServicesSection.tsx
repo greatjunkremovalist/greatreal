@@ -43,7 +43,7 @@ const ServiceCardItem: React.FC<{
     <Link to={`/services/${card.slug}`} className="block w-full relative overflow-hidden bg-slate-100 aspect-[16/11]">
       <img
         src={card.image}
-        alt={card.title}
+        alt={`${card.title} Melbourne — professional junk and rubbish removal`}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
         loading="lazy"
         width={960}
@@ -216,25 +216,25 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
         <div className="max-w-3xl mb-10 sm:mb-12 overflow-visible">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#84d800]/15 text-[#3d6c00] rounded-full text-xs font-extrabold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5 text-[#559400]" />
-            <span>All 10 Specialised Services</span>
+            <span>Melbourne Junk Removal Services</span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#091b2f] tracking-tight">
-            Our Full Range of <span className="text-[#559400]">Services</span>
+            Our Full Range of <span className="text-[#559400]">Junk Removal</span> Services
           </h2>
 
           <p className="mt-3 text-sm sm:text-base text-slate-800 leading-relaxed break-words">
             Browse{' '}
             <span className="font-semibold text-[#091b2f]">residential</span>,{' '}
             <span className="font-semibold text-[#091b2f]">commercial</span>, and{' '}
-            <span className="font-semibold text-[#091b2f]">green waste</span> services.
-            Tap any card for full details, or use the arrows to slide through each row.
+            <span className="font-semibold text-[#091b2f]">green waste</span> rubbish removal across Melbourne.
+            Tap any card for details, or use the arrows to slide each row.
           </p>
         </div>
 
         <ServiceCarousel
           id="services-residential"
-          title="Residential Services"
+          title="Residential Junk Removal"
           cards={SECTION_1}
           onSelectService={onSelectService}
           autoScroll={false}
@@ -242,7 +242,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({ onSelectServic
 
         <ServiceCarousel
           id="services-commercial"
-          title="Commercial Services"
+          title="Commercial Rubbish Removal"
           cards={SECTION_2}
           onSelectService={onSelectService}
           autoScroll={false}

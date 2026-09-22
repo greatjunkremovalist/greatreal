@@ -24,7 +24,7 @@ export const CtaBanner: React.FC<CtaBannerProps> = ({ onQuoteClick, onCallClick 
         <div className="relative w-full">
           <img
             src={banner2Image}
-            alt="Ready to clear the junk? Get your quote today."
+            alt="Great Junk Removalist Melbourne truck — book same-day junk and rubbish removal"
             className="w-full h-auto block select-none pointer-events-none"
             loading="lazy"
           />

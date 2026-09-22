@@ -14,13 +14,13 @@ export const FaqSection: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 sm:mb-12">
           <p className="text-xs font-extrabold uppercase tracking-wider text-[#559400] mb-3">
-            FAQs
+            Melbourne Junk Removal FAQs
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#091b2f] tracking-tight">
             Frequently Asked Questions
           </h2>
           <p className="mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">
-            Everything you need to know about our Melbourne junk removal services.
+            Common questions about our Melbourne junk and rubbish removal services, pricing and bookings.
           </p>
         </div>
 

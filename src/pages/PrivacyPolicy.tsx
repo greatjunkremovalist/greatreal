@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CtaBanner } from '../components/CtaBanner';
+import { SeoHead } from '../components/SeoHead';
 
 interface PrivacyProps {
   onOpenCall: () => void;
@@ -11,6 +12,11 @@ export const PrivacyPolicy: React.FC<PrivacyProps> = ({ onOpenCall }) => {
 
   return (
     <>
+      <SeoHead
+        title="Privacy Policy | Great Junk Removalist Melbourne"
+        description="Privacy policy for Great Junk Removalist Melbourne — how we collect, use and protect your personal information when you request junk removal quotes or book our services."
+      />
+
       <div className="bg-[#091b2f] pt-16 pb-20 border-b border-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
           <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">

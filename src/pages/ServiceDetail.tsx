@@ -9,6 +9,7 @@ import {
 import { getServiceBySlug, SERVICES } from '../data/services';
 import { TrustRibbon } from '../components/TrustRibbon';
 import { CtaBanner } from '../components/CtaBanner';
+import { SeoHead } from '../components/SeoHead';
 
 interface ServiceDetailProps {
   onOpenCall: () => void;
@@ -36,17 +37,22 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
 
   return (
     <>
+      <SeoHead
+        title={`${service.title} Melbourne | Great Junk Removalist`}
+        description={`${service.heroIntro} Book same-day ${service.shortTitle.toLowerCase()} rubbish removal across Melbourne. Call 0451 198 226.`}
+      />
+
       {/* Hero */}
       <div className="relative bg-[#091b2f] text-white min-h-[380px] sm:min-h-[440px] flex items-end overflow-hidden">
         <img
           src={service.image}
-          alt={service.title}
+          alt={`${service.title} Melbourne — junk and rubbish clearance by Great Junk Removalist`}
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#091b2f] via-[#091b2f]/75 to-[#091b2f]/40" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16 pt-28">
-          <nav className="flex items-center gap-1.5 text-xs sm:text-sm text-white/70 mb-4 flex-wrap">
+          <nav className="flex items-center gap-1.5 text-xs sm:text-sm text-white/70 mb-4 flex-wrap" aria-label="Breadcrumb">
             <Link to="/" className="hover:text-[#84d800] transition-colors">
               Home
             </Link>
@@ -59,7 +65,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           </nav>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight max-w-3xl">
-            {service.title}
+            {service.title} in Melbourne
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-200 max-w-2xl leading-relaxed">
             {service.heroIntro}
@@ -69,7 +75,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             <button
               type="button"
               onClick={goQuote}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#84d800] hover:bg-[#76c700] text-white font-extrabold rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#84d800] hover:bg-[#76c700] text-[#091b2f] font-extrabold rounded-xl transition-colors"
             >
               Get a Free Quote
               <ArrowRight className="w-4 h-4" />
@@ -80,7 +86,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
               className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold rounded-xl transition-colors"
             >
               <Phone className="w-4 h-4 text-[#84d800]" />
-              Call Us
+              Call 0451 198 226
             </button>
           </div>
         </div>
@@ -94,7 +100,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
             <div className="lg:col-span-7 space-y-5">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-[#091b2f]">
-                About this service
+                About {service.shortTitle.toLowerCase()} rubbish removal in Melbourne
               </h2>
               {service.overview.map((para) => (
                 <p key={para.slice(0, 32)} className="text-slate-800 text-base sm:text-lg leading-relaxed">
@@ -126,7 +132,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       <section className="py-14 sm:py-16 bg-[#f8fafc] border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#091b2f] mb-8 text-center">
-            Real Melbourne jobs
+            {service.shortTitle} junk removal examples in Melbourne
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {service.gallery.map((src, i) => (
@@ -136,7 +142,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
               >
                 <img
                   src={src}
-                  alt={`${service.shortTitle} example ${i + 1}`}
+                  alt={`${service.title} Melbourne example ${i + 1} — before and after junk clearance`}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -150,7 +156,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       <section className="py-14 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#091b2f] mb-10 text-center">
-            Why choose GJR for {service.shortTitle.toLowerCase()}
+            Why choose Great Junk Removalist for {service.shortTitle.toLowerCase()} removal
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {service.benefits.map((b) => (
@@ -170,7 +176,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       <section className="py-14 sm:py-16 bg-[#091b2f] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-extrabold mb-10 text-center">
-            How it works
+            How {service.shortTitle.toLowerCase()} rubbish removal works
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {service.process.map((p) => (
@@ -207,7 +213,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       <section className="py-14 sm:py-16 bg-[#f8fafc]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between gap-4 mb-8">
-            <h2 className="text-2xl font-extrabold text-[#091b2f]">Related services</h2>
+            <h2 className="text-2xl font-extrabold text-[#091b2f]">Related Melbourne junk removal services</h2>
             <Link
               to="/services"
               className="text-sm font-bold text-[#559400] hover:text-[#091b2f] transition-colors"
@@ -225,7 +231,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
                 <div className="aspect-[16/10] overflow-hidden">
                   <img
                     src={s.image}
-                    alt={s.title}
+                    alt={`${s.title} Melbourne — related junk removal service`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />

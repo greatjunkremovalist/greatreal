@@ -31,7 +31,7 @@ export const SERVICES: ServicePage[] = [
       '/images/lounge-junk-after.jpg?v=ai-20260919',
     ],
     description:
-      'From Houses to Apartments – nothing is too much trouble. We remove your unwanted junk, rubbish, furniture & even fittings and carpet from where you tell us to.',
+      'From Melbourne houses to apartments – nothing is too much trouble. We remove your unwanted junk, rubbish, furniture & even fittings and carpet from where you tell us to.',
     buttonLabel: 'RESIDENTIAL',
     quoteServiceValue: 'Residential Rubbish Removal',
     heroIntro:
@@ -81,7 +81,7 @@ export const SERVICES: ServicePage[] = [
       '/images/office-clear-after.jpg?v=ai-20260919',
     ],
     description:
-      "Be it Offices, Warehouses or Retail – we have you covered. We'll remove anything, from obsolete stock, IT or furniture and cubicles or even whole strip outs.",
+      "Be it Melbourne offices, warehouses or retail – we have you covered. We'll remove anything, from obsolete stock, IT or furniture and cubicles or even whole strip outs.",
     buttonLabel: 'COMMERCIAL',
     quoteServiceValue: 'Commercial Rubbish Removal',
     heroIntro:
@@ -131,7 +131,7 @@ export const SERVICES: ServicePage[] = [
       '/images/garage-clean-before.jpg?v=ai-20260919',
     ],
     description:
-      'Reliable and Fast, we clean out any building or demolition site of rubbish and waste or even strip out fixtures and carpet – for a safer, more productive work site.',
+      'Reliable and fast Melbourne construction rubbish removal — we clean out any building or demolition site of rubbish and waste, or strip out fixtures and carpet for a safer worksite.',
     buttonLabel: 'CONSTRUCTION',
     quoteServiceValue: 'Construction Rubbish Removal',
     heroIntro:
@@ -181,7 +181,7 @@ export const SERVICES: ServicePage[] = [
       '/images/services-original/greenwaste.webp?v=ai-20260919',
     ],
     description:
-      'Branches, fallen storm trees, yard trimmings, soil, and garden cleanups. We do all the raking and loading, and 100% of organic green waste is delivered to mulch recycling.',
+      'Melbourne green waste removal for branches, fallen storm trees, yard trimmings, soil, and garden cleanups. We rake and load, and 100% of organic green waste goes to mulch recycling.',
     buttonLabel: 'GREEN WASTE',
     quoteServiceValue: 'Green Waste',
     heroIntro:
@@ -231,7 +231,7 @@ export const SERVICES: ServicePage[] = [
       '/images/lounge-junk-after.jpg?v=ai-20260919',
     ],
     description:
-      'Compassionate, respectful estate clearance near you. We sort belongings for donation or disposal, handle everything with care, and leave the property ready for sale.',
+      'Compassionate, respectful Melbourne deceased estate clearance near you. We sort belongings for donation or disposal, handle everything with care, and leave the property ready for sale.',
     buttonLabel: 'DECEASED ESTATE',
     quoteServiceValue: 'Deceased Estate',
     heroIntro:
@@ -281,7 +281,7 @@ export const SERVICES: ServicePage[] = [
       '/images/hero-truck-loading.jpg?v=ai-20260919',
     ],
     description:
-      'Bulky upright and grand pianos moved safely. Experienced team equipped with heavy-duty piano dollies, straps, and protective blankets to avoid floor or wall damage.',
+      'Bulky upright and grand piano removal across Melbourne. Experienced team with heavy-duty piano dollies, straps, and protective blankets to avoid floor or wall damage.',
     buttonLabel: 'PIANO REMOVAL',
     quoteServiceValue: 'Piano Removal',
     heroIntro:
@@ -331,7 +331,7 @@ export const SERVICES: ServicePage[] = [
       '/images/reno-debris-before.jpg?v=ai-20260919',
     ],
     description:
-      'Recycle heavy scrap metal, old corrugated roofing, steel posts, car panels, appliances, and plumbing copper. Fast collection from trade sites and homes.',
+      'Recycle heavy scrap metal in Melbourne — old corrugated roofing, steel posts, car panels, appliances, and plumbing copper. Fast collection from trade sites and homes.',
     buttonLabel: 'METAL REMOVAL',
     quoteServiceValue: 'Metal Removal',
     heroIntro:
@@ -381,7 +381,7 @@ export const SERVICES: ServicePage[] = [
       '/images/garden-waste-before.jpg?v=ai-20260919',
     ],
     description:
-      'Unwanted backyard spas, jacuzzis, and hot tubs dismantled on-site safely with specialized cutting equipment and hauled away with zero damage to your fences.',
+      'Unwanted backyard spas, jacuzzis, and hot tubs removed across Melbourne — dismantled on-site safely and hauled away with zero damage to your fences.',
     buttonLabel: 'SPA REMOVAL',
     quoteServiceValue: 'Spa Removal',
     heroIntro:
@@ -431,7 +431,7 @@ export const SERVICES: ServicePage[] = [
       '/images/office-clear-before.jpg?v=ai-20260919',
     ],
     description:
-      'Piles of delivery boxes, packaging materials, and pallets from warehouse orders or residential moves cleared out in one trip for eco-conscious recycling.',
+      'Melbourne cardboard removal for piles of delivery boxes, packaging materials, and pallets from warehouses or residential moves — cleared in one trip for eco-conscious recycling.',
     buttonLabel: 'CARDBOARD',
     quoteServiceValue: 'Cardboard Removal',
     heroIntro:
@@ -481,7 +481,7 @@ export const SERVICES: ServicePage[] = [
       '/images/lounge-junk-before.jpg?v=sofa-pile-20260919',
     ],
     description:
-      'Our services include clean ups for the NDIS, deceased estates, hoarders, spring cleans through to tenants dumped rubbish. We are here to get things cleaned up for you.',
+      'Our Melbourne clean-up services include NDIS support, deceased estates, hoarders, spring cleans through to tenants dumped rubbish. We are here to get things cleaned up for you.',
     buttonLabel: 'CLEAN UPS',
     quoteServiceValue: 'Clean Ups',
     heroIntro:

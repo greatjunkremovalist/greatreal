@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { TrustRibbon } from '../components/TrustRibbon';
 import { CtaBanner } from '../components/CtaBanner';
+import { SeoHead } from '../components/SeoHead';
 import { useNavigate } from 'react-router-dom';
 import { FAQS } from '../data/faqs';
 
@@ -15,13 +16,18 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCall }) => {
 
   return (
     <>
+      <SeoHead
+        title="Junk Removal FAQs Melbourne | Great Junk Removalist"
+        description="Answers to common questions about Melbourne junk and rubbish removal — same-day service, pricing, what we take, nature-strip rules and eco-friendly disposal."
+      />
+
       <div className="bg-[#f8fafc] py-16 sm:py-24 border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-[#091b2f] tracking-tight mb-4">
-            Frequently Asked Questions
+            Melbourne Junk Removal FAQs
           </h1>
           <p className="text-lg text-slate-800">
-            Everything you need to know about our Melbourne junk removal services.
+            Everything you need to know about our Melbourne junk and rubbish removal services, pricing and same-day bookings.
           </p>
         </div>
       </div>

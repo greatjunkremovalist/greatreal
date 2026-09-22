@@ -24,14 +24,14 @@ export const WhyUsSection: React.FC = () => {
                     <img
                       src="/images/lounge-junk-before.jpg?v=sofa-pile-20260919"
                       className="w-full h-full object-cover object-[center_60%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Sofa armchair carpet and TV ready for removal"
+                      alt="Sofa armchair carpet and TV on a Melbourne driveway ready for residential junk removal"
                     />
                   </div>
                   <div className="overflow-hidden min-h-0">
                     <img
                       src="/images/services-original/residential.webp?v=fridge-pile-20260919"
                       className="w-full h-full object-cover object-[center_65%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Fridge mattress chairs and furniture ready for junk removal"
+                      alt="Fridge mattress chairs and furniture ready for Melbourne household rubbish removal"
                     />
                   </div>
                 </div>
@@ -63,19 +63,19 @@ export const WhyUsSection: React.FC = () => {
             </h2>
 
             <p className="text-slate-800 text-base sm:text-lg leading-relaxed font-normal">
-              Reclaim your space the easy way. From old furniture and garden green waste to heavy renovation debris, our expert team and purpose-built trucks handle all the heavy lifting. Fast, affordable, and eco-friendly—we make your rubbish disappear while you just point and relax.
+              Reclaim your space the easy way. From old furniture and garden green waste to heavy renovation debris, our Melbourne junk removal team and purpose-built trucks handle all the heavy lifting. Fast, affordable, and eco-friendly—we make your rubbish disappear while you just point and relax.
             </p>
 
             {/* Benefit List with Truck & Labour Benefits */}
             <div className="space-y-4 pt-2">
               <div className="text-sm sm:text-base leading-snug">
                 <span className="font-extrabold text-[#091b2f]">Transparent Pricing</span>
-                <span className="text-slate-800"> – Highly competitive rates across Melbourne with zero hidden dump fees or surprise costs.</span>
+                <span className="text-slate-800"> – Highly competitive all-inclusive rubbish removal rates across Melbourne with zero hidden dump fees or surprise costs.</span>
               </div>
 
               <div className="text-sm sm:text-base leading-snug">
                 <span className="font-extrabold text-[#091b2f]">Zero Effort Required</span>
-                <span className="text-slate-800"> – Same-day dispatch with two uniformed professionals who do all the heavy loading and sweep up afterwards.</span>
+                <span className="text-slate-800"> – Same-day junk removal dispatch with two uniformed professionals who do all the heavy loading and sweep up afterwards.</span>
               </div>
 
               <div className="text-sm sm:text-base leading-snug">
@@ -92,7 +92,7 @@ export const WhyUsSection: React.FC = () => {
             {/* Melbourne Guarantee Note */}
             <div className="pt-2 flex items-center gap-3 text-xs sm:text-sm text-slate-700 border-t border-slate-100">
               <Shield className="w-4 h-4 text-[#6bb500] shrink-0" />
-              <span>Fully licensed, insured ($20M public liability), and environmentally certified across Greater Melbourne.</span>
+              <span>Fully licensed Melbourne junk removal crew, insured ($20M public liability), and environmentally certified across Greater Melbourne.</span>
             </div>
           </div>
 

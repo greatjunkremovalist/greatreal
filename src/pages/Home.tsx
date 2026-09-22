@@ -8,6 +8,7 @@ import { WhyUsSection } from '../components/WhyUsSection';
 import { EcoFeatureSection } from '../components/EcoFeatureSection';
 import { FaqSection } from '../components/FaqSection';
 import { CtaBanner } from '../components/CtaBanner';
+import { SeoHead } from '../components/SeoHead';
 import { useNavigate } from 'react-router-dom';
 
 interface HomeProps {
@@ -40,6 +41,10 @@ export const Home: React.FC<HomeProps> = ({ onOpenCall, selectedService, setSele
 
   return (
     <>
+      <SeoHead
+        title="Great Junk Removalist Melbourne | Fast & Reliable Rubbish Removal"
+        description="Fast, reliable junk and rubbish removal for homes, businesses, gardens and construction sites in Melbourne. Same day service, all-inclusive pricing from $99."
+      />
       <Hero
         selectedService={selectedService}
         onServiceSelect={(svc) => setSelectedService(svc)}

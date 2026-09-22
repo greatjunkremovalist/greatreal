@@ -22,14 +22,14 @@ export const EcoFeatureSection: React.FC = () => {
                     <img
                       src="/images/garage-clean-before.jpg?v=ai-20260919"
                       className="w-full h-full object-cover object-[center_40%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Cluttered garage ready for junk removal"
+                      alt="Cluttered Melbourne garage before professional junk and rubbish removal"
                     />
                   </div>
                   <div className="overflow-hidden">
                     <img
                       src="/images/garden-waste-before.jpg?v=ai-20260919"
                       className="w-full h-full object-cover object-[center_45%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Garden green waste pile for eco-friendly removal"
+                      alt="Garden green waste pile for eco-friendly rubbish removal in Melbourne"
                     />
                   </div>
                 </div>
@@ -37,7 +37,7 @@ export const EcoFeatureSection: React.FC = () => {
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="bg-[#84d800] text-[#091b2f] font-extrabold px-4 py-2 rounded-full text-xs sm:text-sm shadow-xl flex items-center gap-2 border-2 border-white transform group-hover:scale-105 transition-transform duration-500">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Same-Day Clearouts</span>
+                    <span>Same-Day Junk Removal</span>
                   </div>
                 </div>
               </div>
@@ -52,12 +52,12 @@ export const EcoFeatureSection: React.FC = () => {
           <div className="lg:col-span-6 space-y-6 order-2 lg:order-1">
             <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#091b2f] tracking-tight leading-tight">
               Garage, Garden &amp;{' '}
-              <span className="text-[#6bb500]">Green Waste Clearouts</span>{' '}
-              Done Right
+              <span className="text-[#6bb500]">Green Waste Removal</span>{' '}
+              Melbourne
             </h2>
 
             <p className="text-slate-800 text-base sm:text-lg leading-relaxed font-normal">
-              Packed garages, storm-fallen branches, and yard bags — we load it all. Organic green waste goes to mulch recycling, and your driveway is swept clean before we leave.
+              Packed garages, storm-fallen branches, and yard bags — our Melbourne rubbish removal crew loads it all. Organic green waste goes to mulch recycling, and your driveway is swept clean before we leave.
             </p>
 
             <div className="space-y-4 pt-2">
@@ -65,7 +65,7 @@ export const EcoFeatureSection: React.FC = () => {
                 <span className="font-extrabold text-[#091b2f]">Garage &amp; Shed Declutter</span>
                 <span className="text-slate-800">
                   {' '}
-                  – Mattresses, bikes, boxes, timber scraps, and years of buildup cleared in one visit.
+                  – Mattresses, bikes, boxes, timber scraps, and years of buildup cleared in one junk removal visit.
                 </span>
               </div>
 
@@ -73,7 +73,7 @@ export const EcoFeatureSection: React.FC = () => {
                 <span className="font-extrabold text-[#091b2f]">Garden Green Waste</span>
                 <span className="text-slate-800">
                   {' '}
-                  – Branches, lawn bags, and storm debris hauled away and diverted from landfill.
+                  – Branches, lawn bags, and storm debris hauled for eco-friendly Melbourne green waste disposal.
                 </span>
               </div>
 
@@ -81,14 +81,14 @@ export const EcoFeatureSection: React.FC = () => {
                 <span className="font-extrabold text-[#091b2f]">Book Today, Cleared Today</span>
                 <span className="text-slate-800">
                   {' '}
-                  – Same-day and next-day slots across Greater Melbourne when capacity allows.
+                  – Same-day and next-day rubbish removal slots across Greater Melbourne when capacity allows.
                 </span>
               </div>
             </div>
 
             <div className="pt-2 flex items-center gap-3 text-xs sm:text-sm text-slate-700 border-t border-slate-200/80">
               <Leaf className="w-4 h-4 text-[#6bb500] shrink-0" />
-              <span>100% of collected green waste is delivered to mulch recycling partners.</span>
+              <span>100% of collected Melbourne green waste is delivered to mulch recycling partners.</span>
             </div>
           </div>
 

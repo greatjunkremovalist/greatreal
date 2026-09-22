@@ -4,7 +4,6 @@ import {
   X,
   CheckCircle2,
   Clock,
-  Shield,
   Phone,
   MapPin,
   User,
@@ -105,11 +104,11 @@ export const Hero: React.FC<HeroProps> = ({
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-8 sm:pb-10 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 lg:gap-8 items-center">
           {/* Left: brand message */}
-          <div className="lg:col-span-5 text-white space-y-4 sm:space-y-5 lg:space-y-4 lg:pr-4">
-            <p className="text-[#84d800] font-extrabold text-xs sm:text-sm tracking-[0.2em] uppercase">
-              Junk &amp; Rubbish Removal
+          <div className="lg:col-span-5 text-white space-y-3.5 sm:space-y-4 lg:space-y-4 lg:pr-4">
+            <p className="text-[#84d800] font-extrabold text-xs sm:text-sm tracking-[0.18em] uppercase">
+              Melbourne Junk &amp; Rubbish Removal
             </p>
             <div className="space-y-1.5 lg:space-y-1">
               <h1 className="text-5xl sm:text-6xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-none">
@@ -119,11 +118,11 @@ export const Hero: React.FC<HeroProps> = ({
                 We remove. You relax.
               </p>
             </div>
-            <p className="text-base sm:text-lg lg:text-[15px] xl:text-base text-slate-200 leading-relaxed max-w-md">
-              Fast, reliable junk removal for homes, businesses, gardens and construction sites.
+            <p className="text-base sm:text-lg text-slate-100 leading-relaxed max-w-md font-medium">
+              Same-day junk and rubbish removal for Melbourne homes, businesses and construction sites — furniture, appliances, green waste and renovation debris cleared with a free quote and all-inclusive pricing.
             </p>
 
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-200/90 font-medium">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-slate-100 font-semibold">
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#84d800]" />
                 Same-day options
@@ -138,12 +137,12 @@ export const Hero: React.FC<HeroProps> = ({
               </li>
             </ul>
 
-            <p className="text-sm text-white/70 hidden xl:block pt-1">
-              A clear space. A clear quote. — fill the form and we&apos;ll call you back.
+            <p className="text-base text-slate-200 leading-relaxed max-w-md">
+              How it works: free quote → we book a time → our two-person crew loads and recycles your junk. No nature-strip stacking needed.
             </p>
           </div>
 
-          {/* Right: full quote form — no internal scroll */}
+          {/* Right: quote form */}
           <div className="lg:col-span-7 lg:pl-2" id="hero-quote">
             <div className="relative bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] border border-white/30 overflow-hidden">
               {/* Accent strip — clipped to card radius via overflow-hidden */}
@@ -173,12 +172,12 @@ export const Hero: React.FC<HeroProps> = ({
 
                 <div className="mt-3 lg:mt-2.5 flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">
-                    <Shield className="w-3 h-3 text-[#559400]" />
-                    $20M insured
+                    <CheckCircle2 className="w-3 h-3 text-[#559400]" />
+                    Free quote in ~15 min
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">
-                    <CheckCircle2 className="w-3 h-3 text-[#559400]" />
-                    All-inclusive pricing
+                    <Clock className="w-3 h-3 text-[#559400]" />
+                    Same-day Melbourne service
                   </span>
                 </div>
               </div>
@@ -317,11 +316,11 @@ export const Hero: React.FC<HeroProps> = ({
                       </label>
                       <textarea
                         id="hero-desc"
-                        rows={2}
+                        rows={1}
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="e.g. Old sofa, mattress, and garage clutter"
-                        className="w-full px-3.5 py-2.5 lg:py-2 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all resize-none"
+                        placeholder="e.g. Old sofa, mattress, garage clutter"
+                        className="w-full min-h-[38px] max-h-[38px] px-3 py-2 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-lg text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all resize-none"
                       />
                     </div>
 
@@ -338,18 +337,22 @@ export const Hero: React.FC<HeroProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-2.5 lg:py-2 px-4 bg-[#f4f9ef] hover:bg-[#eaf8dd] border border-dashed border-[#b8d98a] rounded-xl text-[#3d6c00] font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+                        className="w-full py-4 sm:py-4.5 px-4 bg-[#eaf8dd] hover:bg-[#dff3c8] border-2 border-[#84d800] rounded-xl text-[#2f5a00] font-bold text-sm sm:text-base flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 transition-all shadow-[0_4px_14px_-4px_rgba(132,216,0,0.45)] ring-2 ring-[#84d800]/25"
                       >
-                        <Camera className="w-4 h-4" />
-                        Add photos of your junk
-                        <span className="text-[#6b8f3a] font-medium">· Optional</span>
+                        <span className="inline-flex items-center gap-2">
+                          <Camera className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.25]" />
+                          Add photos of your junk
+                        </span>
+                        <span className="text-[#4d7a12] font-semibold text-xs sm:text-sm">
+                          Helps us quote faster · Optional
+                        </span>
                       </button>
                       {formData.photos.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2.5">
                           {formData.photos.map((photoUrl, idx) => (
                             <div
                               key={idx}
-                              className="relative w-14 h-14 rounded-lg overflow-hidden border-2 border-white shadow-md ring-1 ring-slate-200"
+                              className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-[#84d800] shadow-md ring-2 ring-[#84d800]/20"
                             >
                               <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                               <button
