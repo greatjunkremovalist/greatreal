@@ -170,16 +170,6 @@ export const Hero: React.FC<HeroProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-3 lg:mt-2.5 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">
-                    <CheckCircle2 className="w-3 h-3 text-[#559400]" />
-                    Free quote in ~15 min
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-[11px] font-semibold text-slate-700">
-                    <Clock className="w-3 h-3 text-[#559400]" />
-                    Same-day Melbourne service
-                  </span>
-                </div>
               </div>
 
               <div className="px-5 sm:px-6 lg:px-6 py-4 sm:py-5 lg:py-4">
