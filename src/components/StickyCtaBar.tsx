@@ -44,16 +44,6 @@ export const StickyCtaBar: React.FC<StickyCtaBarProps> = ({ onOpenCall }) => {
       aria-hidden={!visible}
     >
       <div className="px-3 py-3">
-        <p className="mb-2 text-center text-[11px] font-medium text-slate-600">
-          Same-day junk removal across Melbourne ·{' '}
-          <a
-            href="tel:0451198226"
-            className="font-bold text-[#091b2f] underline decoration-[#84d800] decoration-2 underline-offset-2"
-          >
-            0451 198 226
-          </a>
-        </p>
-
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"

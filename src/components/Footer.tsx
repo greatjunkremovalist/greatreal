@@ -13,8 +13,8 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-medium mb-6 text-white">GJR's Top Services</h4>
             <ol className="list-decimal pl-4 space-y-3 text-slate-200">
-              <li><Link to="/services/commercial-rubbish-removal" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Commercial Junk Removal</Link></li>
               <li><Link to="/services/residential-rubbish-removal" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Residential Junk Removal</Link></li>
+              <li><Link to="/services/commercial-rubbish-removal" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Commercial Junk Removal</Link></li>
               <li><Link to="/services/construction-rubbish-removal" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Construction Rubbish Removal</Link></li>
               <li><Link to="/services/green-waste-removal" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Green Waste Removal</Link></li>
               <li><Link to="/services/deceased-estate-clearance" className="hover:text-[#74cb00] transition-colors border-b border-slate-300 hover:border-[#74cb00]">Deceased Estate Clearance</Link></li>
