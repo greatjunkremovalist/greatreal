@@ -119,7 +119,7 @@ export const Hero: React.FC<HeroProps> = ({
               </p>
             </div>
             <p className="text-base sm:text-lg text-slate-100 leading-relaxed max-w-md font-medium">
-              Same-day junk and rubbish removal for Melbourne homes, businesses and construction sites — furniture, appliances, green waste and renovation debris cleared with a free quote and all-inclusive pricing.
+              Same-day junk and rubbish removal for Melbourne homes, businesses and construction sites — furniture, appliances, green waste and renovation debris cleared.
             </p>
 
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-slate-100 font-semibold">
@@ -131,15 +131,16 @@ export const Hero: React.FC<HeroProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-[#84d800]" />
                 From $99 all-inclusive
               </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#84d800]" />
-                Fully insured
-              </li>
             </ul>
 
-            <p className="text-base text-slate-200 leading-relaxed max-w-md">
-              How it works: free quote → we book a time → our two-person crew loads and recycles your junk. No nature-strip stacking needed.
-            </p>
+            <div className="space-y-2 max-w-md">
+              <p className="text-base sm:text-lg font-extrabold text-[#84d800] leading-snug tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]">
+                Free Quote → We Book a Time → We Recycle Responsibly
+              </p>
+              <p className="text-base sm:text-lg font-semibold text-white leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                Our two-person crew collects your unwanted items directly from your property, sorts them where possible, and recycles or responsibly disposes of materials to help reduce unnecessary landfill waste. No need to move or stack your junk on the nature strip.
+              </p>
+            </div>
           </div>
 
           {/* Right: quote form */}
