@@ -99,8 +99,8 @@ export const Hero: React.FC<HeroProps> = ({
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover object-[70%_center]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#032b4c] from-[0%] via-[#032b4c]/90 via-[38%] to-[#032b4c]/45 to-[65%] lg:to-[#032b4c]/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#032b4c]/70 via-transparent to-[#032b4c]/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#032b4c] from-[0%] via-[#032b4c] via-[46%] to-[#032b4c]/35 to-[72%] lg:to-[#032b4c]/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#032b4c]/80 via-[#032b4c]/25 to-[#032b4c]/40" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-8 sm:pb-10 lg:py-8">
