@@ -137,7 +137,7 @@ export const Hero: React.FC<HeroProps> = ({
               <p className="text-base sm:text-lg font-extrabold text-[#84d800] leading-snug tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]">
                 Free Quote → We Book a Time → We Recycle Responsibly
               </p>
-              <p className="text-base sm:text-lg font-semibold text-white leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-medium">
                 Our two-person crew collects your unwanted items directly from your property, sorts them where possible, and recycles or responsibly disposes of materials to help reduce unnecessary landfill waste. No need to move or stack your junk on the nature strip.
               </p>
             </div>
