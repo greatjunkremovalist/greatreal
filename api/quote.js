@@ -20,11 +20,27 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
+const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
+
 async function hostOnCatbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
   upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: upload });
+  const response = await fetch('https://catbox.moe/user/api.php', { method: 'POST', headers: HOST_HEADERS, body: upload });
+  const url = (await response.text()).trim();
+  return url.startsWith('http') ? url : '';
+}
+
+async function hostOnLitterbox(bytes) {
+  const upload = new FormData();
+  upload.append('reqtype', 'fileupload');
+  upload.append('time', '72h');
+  upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
+  const response = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+    method: 'POST',
+    headers: HOST_HEADERS,
+    body: upload,
+  });
   const url = (await response.text()).trim();
   return url.startsWith('http') ? url : '';
 }
@@ -32,7 +48,7 @@ async function hostOnCatbox(bytes) {
 async function hostOnTmpfiles(bytes) {
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: upload });
+  const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', headers: HOST_HEADERS, body: upload });
   const data = await response.json().catch(() => null);
   const page = String(data?.data?.url || '');
   if (!page.startsWith('http')) return '';
@@ -42,13 +58,13 @@ async function hostOnTmpfiles(bytes) {
 async function hostOnZeroX(bytes) {
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://0x0.st', { method: 'POST', body: upload });
+  const response = await fetch('https://0x0.st', { method: 'POST', headers: HOST_HEADERS, body: upload });
   const url = (await response.text()).trim();
   return url.startsWith('http') ? url : '';
 }
 
 async function hostPhoto(bytes) {
-  const hosts = [hostOnCatbox, hostOnTmpfiles, hostOnZeroX];
+  const hosts = [hostOnCatbox, hostOnLitterbox, hostOnTmpfiles, hostOnZeroX];
   for (const host of hosts) {
     try {
       const url = await host(bytes);
