@@ -2,25 +2,9 @@ import { QuoteFormData } from '../types';
 
 export const QUOTE_INBOX = 'info@greatjunkremovalist.com.au';
 
-function dataUrlToFile(dataUrl: string, filename: string): File | null {
-  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) return null;
-  const binary = atob(match[2]);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  const type = match[1] || 'image/jpeg';
-  const extension = type.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
-  return new File([bytes], `${filename}.${extension}`, { type });
-}
-
-async function photoForEmail(dataUrl: string, index: number): Promise<File | null> {
-  const original = dataUrlToFile(dataUrl, `junk-photo-${index + 1}`);
-  if (!original) return null;
-
+async function compressPhoto(file: File, index: number): Promise<File> {
   try {
-    const bitmap = await createImageBitmap(original);
+    const bitmap = await createImageBitmap(file);
     const maxEdge = 1600;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
@@ -29,18 +13,22 @@ async function photoForEmail(dataUrl: string, index: number): Promise<File | nul
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    if (!context) return original;
+    if (!context) return file;
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.72));
-    if (!blob) return original;
+    if (!blob) return file;
     return new File([blob], `junk-photo-${index + 1}.jpg`, { type: 'image/jpeg' });
   } catch {
-    return original.size < 9_000_000 ? original : null;
+    return file;
   }
 }
 
-export async function sendQuoteEmail(data: QuoteFormData, source: string): Promise<void> {
+export async function sendQuoteEmail(
+  data: QuoteFormData,
+  source: string,
+  photoFiles: File[] = [],
+): Promise<void> {
   const customerName = data.fullName.trim();
   const customerEmail = data.email.trim();
   const phone = data.phone.trim();
@@ -48,29 +36,37 @@ export async function sendQuoteEmail(data: QuoteFormData, source: string): Promi
   const service = data.service.trim() || 'Not specified';
   const details = data.description.trim() || 'No description provided';
 
-  const photos = (
-    await Promise.all(data.photos.slice(0, 4).map((photo, index) => photoForEmail(photo, index)))
-  ).filter((file): file is File => Boolean(file));
+  if (!customerName || !phone || !address) {
+    throw new Error('Please enter your name, phone, and address before sending.');
+  }
 
-  if (data.photos.length > 0 && photos.length === 0) {
+  const photos = await Promise.all(photoFiles.slice(0, 4).map((file, index) => compressPhoto(file, index)));
+
+  if (photoFiles.length > 0 && photos.length === 0) {
     throw new Error('Could not attach your photos. Please try smaller images or call 0451 198 226.');
   }
+
+  const message = [
+    `Name: ${customerName}`,
+    `Phone: ${phone}`,
+    `Email: ${customerEmail || 'Not provided'}`,
+    `Address: ${address}`,
+    `Service: ${service}`,
+    `What to remove: ${details}`,
+    `Photos: ${photos.length}`,
+    `Sent from: ${source}`,
+  ].join('\n');
 
   const body = new FormData();
   body.append('name', customerName);
   body.append('email', customerEmail || QUOTE_INBOX);
-  body.append('Customer name', customerName);
-  body.append('Customer email', customerEmail || 'Not provided');
   body.append('Phone', phone);
   body.append('Address', address);
   body.append('Service', service);
-  body.append('What to remove', details);
-  body.append('Photos attached', String(photos.length));
-  body.append('Form', source);
-  body.append('_subject', `Quote request — ${customerName} (${address})`);
+  body.append('message', message);
+  body.append('_subject', `Quote request from ${customerName}`);
   body.append('_template', 'table');
   body.append('_captcha', 'false');
-  if (customerEmail) body.append('_replyto', customerEmail);
 
   photos.forEach((photo) => {
     body.append('attachment', photo, photo.name);

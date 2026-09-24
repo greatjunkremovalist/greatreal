@@ -13,6 +13,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
   onServiceSelect,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoFilesRef = useRef<File[]>([]);
 
   const [formData, setFormData] = useState<QuoteFormData>({
     fullName: '',
@@ -36,10 +37,11 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
   }, [selectedService]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    photoFilesRef.current = [...photoFilesRef.current, ...files];
 
-    Array.from(files).forEach((file: File) => {
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (reader.result) {
@@ -51,21 +53,36 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
       };
       reader.readAsDataURL(file);
     });
+    e.target.value = '';
   };
 
   const removePhoto = (indexToRemove: number) => {
+    photoFilesRef.current = photoFilesRef.current.filter((_, idx) => idx !== indexToRemove);
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.filter((_, idx) => idx !== indexToRemove),
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
     setLoading(true);
     setError('');
     try {
-      await sendQuoteEmail(formData, 'Get a quote page');
+      await sendQuoteEmail(
+        {
+          fullName: String(form.get('fullName') || ''),
+          phone: String(form.get('phone') || ''),
+          email: String(form.get('email') || ''),
+          suburb: String(form.get('suburb') || ''),
+          service: String(form.get('service') || ''),
+          description: String(form.get('description') || ''),
+          photos: [],
+        },
+        'Get a quote page',
+        photoFilesRef.current,
+      );
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');
@@ -75,6 +92,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
   };
 
   const resetForm = () => {
+    photoFilesRef.current = [];
     setSubmitted(false);
     setFormData({
       fullName: '',
@@ -190,6 +208,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                       </label>
                       <input
                         id="field-name"
+                        name="fullName"
                         type="text"
                         required
                         value={formData.fullName}
@@ -205,6 +224,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                       </label>
                       <input
                         id="field-phone"
+                        name="phone"
                         type="tel"
                         required
                         value={formData.phone}
@@ -223,6 +243,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                       </label>
                       <input
                         id="field-email"
+                        name="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -237,6 +258,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                       </label>
                       <input
                         id="field-suburb"
+                        name="suburb"
                         type="text"
                         required
                         value={formData.suburb}
@@ -254,6 +276,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                     </label>
                     <select
                       id="field-service"
+                      name="service"
                       value={formData.service}
                       onChange={(e) => {
                         setFormData({ ...formData, service: e.target.value });
@@ -286,6 +309,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                     </label>
                     <textarea
                       id="field-desc"
+                      name="description"
                       rows={3}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}

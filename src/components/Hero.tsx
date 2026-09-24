@@ -23,6 +23,7 @@ export const Hero: React.FC<HeroProps> = ({
   onServiceSelect,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoFilesRef = useRef<File[]>([]);
   const [formData, setFormData] = useState<QuoteFormData>({
     fullName: '',
     phone: '',
@@ -43,9 +44,10 @@ export const Hero: React.FC<HeroProps> = ({
   }, [selectedService]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach((file: File) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    photoFilesRef.current = [...photoFilesRef.current, ...files];
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (reader.result) {
@@ -57,21 +59,36 @@ export const Hero: React.FC<HeroProps> = ({
       };
       reader.readAsDataURL(file);
     });
+    e.target.value = '';
   };
 
   const removePhoto = (indexToRemove: number) => {
+    photoFilesRef.current = photoFilesRef.current.filter((_, idx) => idx !== indexToRemove);
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.filter((_, idx) => idx !== indexToRemove),
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
     setLoading(true);
     setError('');
     try {
-      await sendQuoteEmail(formData, 'Homepage quote form');
+      await sendQuoteEmail(
+        {
+          fullName: String(form.get('fullName') || ''),
+          phone: String(form.get('phone') || ''),
+          email: String(form.get('email') || ''),
+          suburb: String(form.get('suburb') || ''),
+          service: String(form.get('service') || ''),
+          description: String(form.get('description') || ''),
+          photos: [],
+        },
+        'Homepage quote form',
+        photoFilesRef.current,
+      );
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');
@@ -81,6 +98,7 @@ export const Hero: React.FC<HeroProps> = ({
   };
 
   const resetForm = () => {
+    photoFilesRef.current = [];
     setSubmitted(false);
     setFormData({
       fullName: '',
@@ -206,6 +224,7 @@ export const Hero: React.FC<HeroProps> = ({
                           <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-name"
+                            name="fullName"
                             type="text"
                             required
                             value={formData.fullName}
@@ -223,6 +242,7 @@ export const Hero: React.FC<HeroProps> = ({
                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-phone"
+                            name="phone"
                             type="tel"
                             required
                             value={formData.phone}
@@ -243,6 +263,7 @@ export const Hero: React.FC<HeroProps> = ({
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-email"
+                            name="email"
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -259,6 +280,7 @@ export const Hero: React.FC<HeroProps> = ({
                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-suburb"
+                            name="suburb"
                             type="text"
                             required
                             value={formData.suburb}
@@ -276,6 +298,7 @@ export const Hero: React.FC<HeroProps> = ({
                       </label>
                       <select
                         id="hero-service"
+                        name="service"
                         value={formData.service}
                         onChange={(e) => {
                           setFormData({ ...formData, service: e.target.value });
@@ -309,6 +332,7 @@ export const Hero: React.FC<HeroProps> = ({
                       </label>
                       <textarea
                         id="hero-desc"
+                        name="description"
                         rows={1}
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
