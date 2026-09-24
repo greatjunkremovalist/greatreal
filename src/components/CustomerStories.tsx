@@ -12,7 +12,7 @@ import {
 import { CustomerStory } from '../types';
 import { INITIAL_CUSTOMER_STORIES } from '../data/customerStories';
 
-const STORAGE_KEY = 'gjr_customer_stories_v2';
+const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
 
 const AI_SUMMARY_POINTS = [
