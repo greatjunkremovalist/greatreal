@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { CustomerStory } from '../types';
 import { INITIAL_CUSTOMER_STORIES } from '../data/customerStories';
+import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
@@ -51,17 +52,41 @@ export const CustomerStories: React.FC = () => {
     reviewText: '',
   });
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const google = useGoogleReviews();
+  const visibleStories = useMemo(() => {
+    if (!google.reviews.length) return stories;
+    return google.reviews.map((review): CustomerStory => ({
+      id: review.id,
+      authorName: review.authorName,
+      suburb: 'Google review',
+      serviceCategory: 'Google review',
+      rating: review.rating,
+      timeAgo: review.timeAgo,
+      storyTitle: review.authorName,
+      reviewText: review.text || 'Rated this business on Google.',
+      initials:
+        review.authorName
+          .split(' ')
+          .map((part) => part[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'G',
+      avatarBg: 'bg-blue-600',
+      verified: true,
+      avatarUrl: review.authorPhoto,
+    }));
+  }, [google.reviews, stories]);
 
   useEffect(() => {
-    if (stories.length <= 1 || isModalOpen) return;
+    if (visibleStories.length <= 1 || isModalOpen) return;
     const supportsHover =
       typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
     if (supportsHover && isHovered) return;
     const timer = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % stories.length);
+      setCurrentIndex((prev) => (prev + 1) % visibleStories.length);
     }, AUTO_SLIDE_INTERVAL);
     return () => window.clearInterval(timer);
-  }, [stories.length, isHovered, isModalOpen]);
+  }, [visibleStories.length, isHovered, isModalOpen]);
 
   useEffect(() => {
     try {
@@ -72,11 +97,11 @@ export const CustomerStories: React.FC = () => {
   }, [stories]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : stories.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : visibleStories.length - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % stories.length);
+    setCurrentIndex((prev) => (prev + 1) % visibleStories.length);
   };
 
   const handleSubmitReview = (e: React.FormEvent) => {
@@ -123,12 +148,13 @@ export const CustomerStories: React.FC = () => {
     }, 1500);
   };
 
-  const reviewCount = stories.length;
+  const reviewCount = google.reviews.length ? google.count : visibleStories.length;
   const avgRating = useMemo(() => {
-    if (!stories.length) return '5.0';
-    const sum = stories.reduce((acc, s) => acc + (s.rating || 5), 0);
-    return (sum / stories.length).toFixed(1);
-  }, [stories]);
+    if (google.rating !== null) return google.rating.toFixed(1);
+    if (!visibleStories.length) return '5.0';
+    const sum = visibleStories.reduce((acc, s) => acc + (s.rating || 5), 0);
+    return (sum / visibleStories.length).toFixed(1);
+  }, [google.rating, visibleStories]);
 
   return (
     <section className="w-full bg-[#f3f4f6] py-8 sm:py-10" id="reviews">
@@ -164,13 +190,14 @@ export const CustomerStories: React.FC = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
+            <a
+              href={google.writeReviewUrl}
+              target="_blank"
+              rel="noreferrer"
               className="shrink-0 px-3.5 sm:px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs sm:text-sm font-semibold rounded-full transition-colors"
             >
               Review us on Google
-            </button>
+            </a>
           </div>
 
           {/* Slim AI strip — not a tall card */}
@@ -219,7 +246,7 @@ export const CustomerStories: React.FC = () => {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 gjr-fade-slide"
             >
               {[0, 1, 2].map((offset) => {
-                const story = stories[(currentIndex + offset) % stories.length];
+                const story = visibleStories[(currentIndex + offset) % visibleStories.length];
                 const isExpanded = expandedStories[story.id];
                 const hide =
                   offset === 0 ? '' : offset === 1 ? 'hidden sm:flex' : 'hidden lg:flex';
@@ -262,7 +289,10 @@ export const CustomerStories: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="text-[#fbbc04] text-xs tracking-wide mb-1">★★★★★</div>
+                    <div className="text-xs tracking-wide mb-1">
+                      <span className="text-[#fbbc04]">{'★★★★★'.slice(0, Math.round(story.rating || 5))}</span>
+                      <span className="text-slate-600">{'★★★★★'.slice(Math.round(story.rating || 5))}</span>
+                    </div>
 
                     <p
                       className={`text-xs text-slate-200 leading-relaxed ${
@@ -293,7 +323,7 @@ export const CustomerStories: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-center gap-1.5 mt-3.5">
-            {stories.map((s, idx) => (
+            {visibleStories.map((s, idx) => (
               <button
                 key={s.id}
                 type="button"

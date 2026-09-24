@@ -1,28 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { useMapsLibrary } from '@vis.gl/react-google-maps';
-import { CustomerStory } from '../types';
-import { INITIAL_CUSTOMER_STORIES } from '../data/customerStories';
+import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 interface GoogleReviewBadgeProps {
-  placeId: string;
-  fallbackRating?: number;
-  fallbackCount?: number;
-}
-
-const STORIES_KEY = 'gjr_customer_stories_v3';
-
-function loadStories(): CustomerStory[] {
-  try {
-    const saved = localStorage.getItem(STORIES_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // Use the built-in reviews when saved stories cannot be read.
-  }
-  return INITIAL_CUSTOMER_STORIES;
+  placeId?: string;
 }
 
 function GoogleMark({ className }: { className?: string }) {
@@ -37,28 +18,20 @@ function GoogleMark({ className }: { className?: string }) {
 }
 
 function Stars({ rating }: { rating: number }) {
+  const filled = Math.max(0, Math.min(5, Math.round(rating)));
   return (
-    <span className="text-[#fbbc04] tracking-wide" aria-label={`${rating} out of 5 stars`}>
-      {'★★★★★'.slice(0, Math.round(rating))}
-      <span className="text-slate-300">{'★★★★★'.slice(Math.round(rating))}</span>
+    <span className="tracking-wide" aria-label={`${filled} out of 5 stars`}>
+      <span className="text-[#fbbc04]">{'★★★★★'.slice(0, filled)}</span>
+      <span className="text-slate-300">{'★★★★★'.slice(filled)}</span>
     </span>
   );
 }
 
-export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = ({
-  placeId,
-  fallbackRating = 0,
-  fallbackCount = 0,
-}) => {
-  const placesLib = useMapsLibrary('places');
-  const [rating, setRating] = useState<number | null>(null);
-  const [reviewCount, setReviewCount] = useState<number | null>(null);
+export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = () => {
   const [open, setOpen] = useState(false);
-  const [stories, setStories] = useState<CustomerStory[]>(INITIAL_CUSTOMER_STORIES);
-
-  useEffect(() => {
-    setStories(loadStories());
-  }, [open]);
+  const google = useGoogleReviews(open ? 1 : 0);
+  const displayRating = google.rating !== null ? google.rating.toFixed(1) : '0.0';
+  const displayCount = google.count;
 
   useEffect(() => {
     if (!open) return;
@@ -73,40 +46,6 @@ export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = ({
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!placesLib || !placeId) return;
-
-    const getPlaceData = async () => {
-      try {
-        const { Place } = placesLib;
-        const place = new Place({
-          id: placeId,
-          requestedLanguage: 'en',
-        });
-
-        await place.fetchFields({
-          fields: ['rating', 'userRatingCount'],
-        });
-
-        if (place.rating) setRating(place.rating);
-        if (place.userRatingCount) setReviewCount(place.userRatingCount);
-      } catch (error) {
-        console.warn('Could not fetch live Google Maps Place data, using fallback rating:', error);
-      }
-    };
-
-    getPlaceData();
-  }, [placesLib, placeId]);
-
-  const storyRating = useMemo(() => {
-    if (!stories.length) return fallbackRating;
-    const sum = stories.reduce((total, story) => total + (story.rating || 5), 0);
-    return sum / stories.length;
-  }, [stories, fallbackRating]);
-
-  const displayRating = (rating !== null ? rating : storyRating || fallbackRating).toFixed(1);
-  const displayCount = reviewCount !== null ? reviewCount : stories.length || fallbackCount;
-
   return (
     <>
       <button
@@ -119,7 +58,7 @@ export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = ({
       >
         <GoogleMark className="w-5 h-5" />
         <span className="font-bold text-white text-base">{displayRating}</span>
-        <span className="text-[#f59e0b] text-base tracking-widest">★★★★★</span>
+        <span className="text-[#f59e0b] text-base tracking-widest" aria-hidden>★★★★★</span>
         <span className="text-slate-400 text-sm font-medium">({displayCount})</span>
       </button>
 
@@ -143,7 +82,7 @@ export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = ({
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-slate-600">
                     <span className="font-bold text-slate-900">{displayRating}</span>
                     <Stars rating={Number(displayRating)} />
-                    <span>{displayCount} reviews</span>
+                    <span>{displayCount} on Google</span>
                   </p>
                 </div>
               </div>
@@ -158,24 +97,54 @@ export const GoogleReviewBadge: React.FC<GoogleReviewBadgeProps> = ({
             </div>
 
             <div className="overflow-y-auto px-5 py-2">
-              {stories.map((story) => (
-                <article key={story.id} className="border-b border-slate-100 py-4 last:border-b-0">
-                  <div className="flex items-start gap-3">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${story.avatarBg || 'bg-emerald-600'}`}>
-                      {story.initials}
+              {google.reviews.length === 0 ? (
+                <p className="py-8 text-center text-sm leading-relaxed text-slate-600">
+                  Reviews left on the Great Junk Removalist Google Business page show up here. None are on that listing yet.
+                </p>
+              ) : (
+                google.reviews.map((review) => (
+                  <article key={review.id} className="border-b border-slate-100 py-4 last:border-b-0">
+                    <div className="flex items-start gap-3">
+                      {review.authorPhoto ? (
+                        <img src={review.authorPhoto} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                          {review.authorName.slice(0, 1)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <a href={review.authorUrl} target="_blank" rel="noreferrer" className="font-semibold text-slate-900 hover:underline">
+                          {review.authorName}
+                        </a>
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                          <Stars rating={review.rating} />
+                          <span className="text-xs text-slate-400">{review.timeAgo}</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">{story.authorName}</p>
-                      <p className="text-xs text-slate-500">{story.suburb}</p>
-                      <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-                        <Stars rating={story.rating || 5} />
-                        <span className="text-xs text-slate-400">{story.timeAgo}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-700">{story.reviewText}</p>
-                </article>
-              ))}
+                    {review.text && <p className="mt-2 text-sm leading-relaxed text-slate-700">{review.text}</p>}
+                  </article>
+                ))
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 border-t border-slate-200 px-5 py-4">
+              <a
+                href={google.mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-[#1a73e8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1557b0]"
+              >
+                See all on Google
+              </a>
+              <a
+                href={google.writeReviewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Write a Google review
+              </a>
             </div>
           </div>
         </div>

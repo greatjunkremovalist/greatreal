@@ -95,10 +95,10 @@ export const WorkShowcase: React.FC = () => {
         <div className="flex justify-center mb-6">
           {import.meta.env.VITE_GOOGLE_MAPS_API_KEY && import.meta.env.VITE_GOOGLE_MAPS_API_KEY !== 'dummy_key' ? (
             <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-              <GoogleReviewBadge placeId="ChIJ_x5w2j9C1moRvjH2q0o0lD0" />
+              <GoogleReviewBadge />
             </APIProvider>
           ) : (
-            <GoogleReviewBadge placeId="ChIJ_x5w2j9C1moRvjH2q0o0lD0" />
+            <GoogleReviewBadge />
           )}
         </div>
 

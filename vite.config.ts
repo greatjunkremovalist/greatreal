@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 import quoteHandler from './api/quote.js';
+import googleReviewsHandler from './api/google-reviews.js';
 
 function quoteApiPlugin() {
   return {
@@ -10,6 +11,9 @@ function quoteApiPlugin() {
     configureServer(server) {
       server.middlewares.use('/api/quote', (req, res) => {
         quoteHandler(req, res);
+      });
+      server.middlewares.use('/api/google-reviews', (req, res) => {
+        googleReviewsHandler(req, res);
       });
     },
   };
