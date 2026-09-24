@@ -50,16 +50,29 @@ async function deliver(recipient, fields, files) {
     body.append('attachment', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   });
 
-  const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
+  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
     method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Origin: 'https://www.greatjunkremovalist.com.au',
+      Referer: 'https://www.greatjunkremovalist.com.au/',
+    },
     body,
   });
   const text = await response.text();
-  if (/needs Activation/i.test(text)) {
+  let payload = null;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    payload = null;
+  }
+  if (/needs Activation/i.test(text) || /needs Activation/i.test(String(payload?.message || ''))) {
     throw new Error(`Check ${recipient} for an Activate Form email and click the link, then send the quote again.`);
   }
-  if (!response.ok || !/submitted successfully/i.test(text)) {
-    throw new Error(`The quote email to ${recipient} was not accepted. Please call 0451 198 226.`);
+  const accepted = payload?.success === true || payload?.success === 'true' || /submitted successfully/i.test(text);
+  if (!response.ok || !accepted) {
+    const detail = String(payload?.message || text).replace(/\s+/g, ' ').slice(0, 180);
+    throw new Error(`The quote email to ${recipient} was not accepted (${response.status}: ${detail}). Please call 0451 198 226.`);
   }
 }
 
