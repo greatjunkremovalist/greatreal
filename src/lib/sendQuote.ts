@@ -2,6 +2,7 @@ import { QuoteFormData } from '../types';
 
 export const QUOTE_INBOX = 'info@greatjunkremovalist.com.au';
 const QUOTE_COPY = 'yogeshmehta8950@gmail.com';
+const QUOTE_RECIPIENTS = [QUOTE_INBOX, QUOTE_COPY];
 
 async function compressPhoto(file: File, index: number): Promise<File> {
   try {
@@ -44,8 +45,8 @@ function fileField(file: File) {
 }
 
 /** Classic multipart post. FormSubmit's AJAX endpoint accepts text but drops images. */
-function postQuoteForm(fields: Record<string, string>, photos: File[]): Promise<void> {
-  const iframeName = `gjr-quote-${Date.now()}`;
+function postQuoteForm(recipient: string, fields: Record<string, string>, photos: File[]): Promise<void> {
+  const iframeName = `gjr-quote-${recipient.replace(/[^a-z0-9]/gi, '')}-${Date.now()}`;
   const iframe = document.createElement('iframe');
   iframe.name = iframeName;
   iframe.hidden = true;
@@ -53,7 +54,7 @@ function postQuoteForm(fields: Record<string, string>, photos: File[]): Promise<
 
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = `https://formsubmit.co/${encodeURIComponent(QUOTE_INBOX)}`;
+  form.action = `https://formsubmit.co/${encodeURIComponent(recipient)}`;
   form.enctype = 'multipart/form-data';
   form.target = iframeName;
   form.acceptCharset = 'UTF-8';
@@ -111,22 +112,20 @@ export async function sendQuoteEmail(
     throw new Error('Could not attach your photos. Please try smaller images or call 0451 198 226.');
   }
 
-  await postQuoteForm(
-    {
-      name: customerName,
-      email: customerEmail || QUOTE_INBOX,
-      Name: customerName,
-      Email: customerEmail || 'Not provided',
-      Phone: phone,
-      Postcode: address,
-      'What do you need removed?': service,
-      'Details of Your Junk': details,
-      'Sent from': source,
-      _subject: `Quote request from ${customerName}`,
-      _template: 'table',
-      _captcha: 'false',
-      _cc: QUOTE_COPY,
-    },
-    photos,
-  );
+  const fields = {
+    name: customerName,
+    email: customerEmail || QUOTE_INBOX,
+    Name: customerName,
+    Email: customerEmail || 'Not provided',
+    Phone: phone,
+    Postcode: address,
+    'What do you need removed?': service,
+    'Details of Your Junk': details,
+    'Sent from': source,
+    _subject: `Quote request from ${customerName}`,
+    _template: 'table',
+    _captcha: 'false',
+  };
+
+  await Promise.all(QUOTE_RECIPIENTS.map((recipient) => postQuoteForm(recipient, fields, photos)));
 }
