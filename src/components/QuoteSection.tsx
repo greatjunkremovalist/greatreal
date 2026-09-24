@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ArrowRight, Upload, X, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { QuoteFormData } from '../types';
+import { sendQuoteEmail } from '../lib/sendQuote';
 
 interface QuoteSectionProps {
   selectedService?: string;
@@ -25,6 +26,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Sync selected service if updated from props
   React.useEffect(() => {
@@ -58,14 +60,18 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+    try {
+      await sendQuoteEmail(formData, 'Get a quote page');
       setSubmitted(true);
-    }, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -358,6 +364,11 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
                   <p className="text-center text-slate-700 text-xs mt-3">
                     By submitting, you agree to be contacted about your quote.
                   </p>
+                  {error && (
+                    <p className="text-center text-red-600 text-xs" role="alert">
+                      {error}
+                    </p>
+                  )}
                 </form>
               )}
             </div>

@@ -11,6 +11,7 @@ import {
   Camera,
 } from 'lucide-react';
 import { QuoteFormData } from '../types';
+import { sendQuoteEmail } from '../lib/sendQuote';
 
 interface HeroProps {
   selectedService?: string;
@@ -33,6 +34,7 @@ export const Hero: React.FC<HeroProps> = ({
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   React.useEffect(() => {
     if (selectedService) {
@@ -64,13 +66,18 @@ export const Hero: React.FC<HeroProps> = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+    try {
+      await sendQuoteEmail(formData, 'Homepage quote form');
       setSubmitted(true);
-    }, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -370,6 +377,11 @@ export const Hero: React.FC<HeroProps> = ({
                       )}
                     </button>
 
+                    {error && (
+                      <p className="text-center text-red-600 text-xs leading-relaxed" role="alert">
+                        {error}
+                      </p>
+                    )}
                     <p className="text-center text-slate-500 text-[11px] leading-relaxed">
                       No spam. Local Melbourne crew. You&apos;ll only hear from us about this quote.
                     </p>
