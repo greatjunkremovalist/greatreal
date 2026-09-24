@@ -1,5 +1,7 @@
 import { QuoteFormData } from '../types';
 
+const QUOTE_RECIPIENTS = ['info@greatjunkremovalist.com.au', 'yogeshmehta8950@gmail.com'];
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -34,6 +36,25 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
+async function postQuoteForm(recipient: string, fields: Record<string, string>, photos: File[]): Promise<void> {
+  const body = new FormData();
+  Object.entries(fields).forEach(([name, value]) => body.append(name, value));
+  photos.forEach((photo) => body.append('attachment', photo, 'image.jpg'));
+
+  const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
+    method: 'POST',
+    body,
+  });
+  const text = await response.text();
+
+  if (/needs Activation/i.test(text)) {
+    throw new Error(`Check ${recipient} for an Activate Form email and click the link, then send the quote again.`);
+  }
+  if (!response.ok || !/submitted successfully/i.test(text)) {
+    throw new Error(`The quote email to ${recipient} was not accepted. Please call 0451 198 226.`);
+  }
+}
+
 export async function sendQuoteEmail(
   data: QuoteFormData,
   _source: string,
@@ -51,26 +72,49 @@ export async function sendQuoteEmail(
   }
 
   const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
-  if (photoFiles.length > 0 && photos.length === 0) {
-    throw new Error('Could not attach your photos. Please try smaller images or call 0451 198 226.');
+  let links: string[] = [];
+
+  if (photos.length > 0) {
+    const response = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; links?: string[] } | null;
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.error || 'Could not prepare your photo links. Please call 0451 198 226.');
+    }
+    links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
+    if (links.length === 0) {
+      throw new Error('Could not prepare your photo links. Please try smaller images or call 0451 198 226.');
+    }
   }
 
-  const response = await fetch('/api/quote', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      email,
-      phone,
-      postcode,
-      service,
-      details,
-      photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-    }),
-  });
+  const fields = {
+    Name: name,
+    Email: email || 'Not provided',
+    Phone_10_Digit_Number_: phone,
+    Postcode: postcode,
+    'What do you need removed?': service,
+    'Junk Pics': links.length ? links.join('\n') : 'No photos',
+    'Details of Your Junk': details,
+    _replyto: email || 'info@greatjunkremovalist.com.au',
+    _subject: `Quote request from ${name}`,
+    _template: 'box',
+    _captcha: 'false',
+  };
 
-  const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-  if (!response.ok || !result?.ok) {
-    throw new Error(result?.error || 'Could not send your quote request. Please call 0451 198 226.');
+  const results = await Promise.allSettled(
+    QUOTE_RECIPIENTS.map((recipient) => postQuoteForm(recipient, fields, photos)),
+  );
+  const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+  if (failures.length > 0) {
+    throw new Error(
+      failures
+        .map((failure) => (failure.reason instanceof Error ? failure.reason.message : 'Could not send the quote email.'))
+        .join(' '),
+    );
   }
 }

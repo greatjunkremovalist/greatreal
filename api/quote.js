@@ -1,5 +1,3 @@
-const RECIPIENTS = ['info@greatjunkremovalist.com.au', 'yogeshmehta8950@gmail.com'];
-
 export const maxDuration = 60;
 
 function sendJson(res, status, data) {
@@ -22,58 +20,44 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-async function hostPhoto(bytes) {
+async function hostOnCatbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
   upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    const response = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      body: upload,
-      signal: controller.signal,
-    });
-    const url = (await response.text()).trim();
-    return url.startsWith('http') ? url : '';
-  } catch {
-    return '';
-  } finally {
-    clearTimeout(timer);
-  }
+  const response = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: upload });
+  const url = (await response.text()).trim();
+  return url.startsWith('http') ? url : '';
 }
 
-async function deliver(recipient, fields, files) {
-  const body = new FormData();
-  Object.entries(fields).forEach(([name, value]) => body.append(name, value));
-  files.forEach((bytes) => {
-    body.append('attachment', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  });
+async function hostOnTmpfiles(bytes) {
+  const upload = new FormData();
+  upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
+  const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: upload });
+  const data = await response.json().catch(() => null);
+  const page = String(data?.data?.url || '');
+  if (!page.startsWith('http')) return '';
+  return page.replace('://tmpfiles.org/', '://tmpfiles.org/dl/');
+}
 
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      Origin: 'https://www.greatjunkremovalist.com.au',
-      Referer: 'https://www.greatjunkremovalist.com.au/',
-    },
-    body,
-  });
-  const text = await response.text();
-  let payload = null;
-  try {
-    payload = JSON.parse(text);
-  } catch {
-    payload = null;
+async function hostOnZeroX(bytes) {
+  const upload = new FormData();
+  upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
+  const response = await fetch('https://0x0.st', { method: 'POST', body: upload });
+  const url = (await response.text()).trim();
+  return url.startsWith('http') ? url : '';
+}
+
+async function hostPhoto(bytes) {
+  const hosts = [hostOnCatbox, hostOnTmpfiles, hostOnZeroX];
+  for (const host of hosts) {
+    try {
+      const url = await host(bytes);
+      if (url) return url;
+    } catch {
+      // Try the next host.
+    }
   }
-  if (/needs Activation/i.test(text) || /needs Activation/i.test(String(payload?.message || ''))) {
-    throw new Error(`Check ${recipient} for an Activate Form email and click the link, then send the quote again.`);
-  }
-  const accepted = payload?.success === true || payload?.success === 'true' || /submitted successfully/i.test(text);
-  if (!response.ok || !accepted) {
-    const detail = String(payload?.message || text).replace(/\s+/g, ' ').slice(0, 180);
-    throw new Error(`The quote email to ${recipient} was not accepted (${response.status}: ${detail}). Please call 0451 198 226.`);
-  }
+  return '';
 }
 
 export default async function handler(req, res) {
@@ -84,56 +68,23 @@ export default async function handler(req, res) {
 
   try {
     const payload = await readJson(req);
-    const name = String(payload.name || '').trim();
-    const email = String(payload.email || '').trim();
-    const phone = String(payload.phone || '').trim();
-    const postcode = String(payload.postcode || '').trim();
-    const service = String(payload.service || '').trim() || 'Not specified';
-    const details = String(payload.details || '').trim() || 'No description provided';
     const photos = Array.isArray(payload.photos) ? payload.photos.filter((photo) => photo?.data).slice(0, 5) : [];
+    const links = [];
+    for (const photo of photos) {
+      const url = await hostPhoto(Buffer.from(photo.data, 'base64'));
+      if (url) links.push(url);
+    }
 
-    if (!name || !phone || !postcode) {
-      sendJson(res, 400, { ok: false, error: 'Please enter your name, phone, and address before sending.' });
+    if (photos.length > 0 && links.length === 0) {
+      sendJson(res, 502, { ok: false, error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.' });
       return;
     }
 
-    const files = photos.map((photo) => Buffer.from(photo.data, 'base64'));
-    const links = (await Promise.all(files.map((bytes) => hostPhoto(bytes)))).filter(Boolean);
-    const junkPics = links.length
-      ? links.join('\n')
-      : files.length
-        ? files.map(() => 'image.jpg').join('\n')
-        : 'No photos';
-
-    const fields = {
-      Name: name,
-      Email: email || 'Not provided',
-      Phone_10_Digit_Number_: phone,
-      Postcode: postcode,
-      'What do you need removed?': service,
-      'Junk Pics': junkPics,
-      'Details of Your Junk': details,
-      _replyto: email || 'info@greatjunkremovalist.com.au',
-      _subject: `Quote request from ${name}`,
-      _template: 'box',
-      _captcha: 'false',
-    };
-
-    const results = await Promise.allSettled(RECIPIENTS.map((recipient) => deliver(recipient, fields, files)));
-    const errors = results
-      .filter((result) => result.status === 'rejected')
-      .map((result) => (result.reason instanceof Error ? result.reason.message : 'Could not send the quote email.'));
-
-    if (errors.length > 0) {
-      sendJson(res, 502, { ok: false, error: errors.join(' ') });
-      return;
-    }
-
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true, links });
   } catch (error) {
     sendJson(res, 500, {
       ok: false,
-      error: error instanceof Error ? error.message : 'Could not send your quote request. Please call 0451 198 226.',
+      error: error instanceof Error ? error.message : 'Could not prepare your photos. Please call 0451 198 226.',
     });
   }
 }
