@@ -1,6 +1,7 @@
 import { QuoteFormData } from '../types';
 
 export const QUOTE_INBOX = 'info@greatjunkremovalist.com.au';
+const QUOTE_COPY = 'yogeshmehta8950@gmail.com';
 
 async function compressPhoto(file: File, index: number): Promise<File> {
   try {
@@ -18,10 +19,74 @@ async function compressPhoto(file: File, index: number): Promise<File> {
     bitmap.close();
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.72));
     if (!blob) return file;
-    return new File([blob], `junk-photo-${index + 1}.jpg`, { type: 'image/jpeg' });
+    return new File([blob], `image-${index + 1}.jpg`, { type: 'image/jpeg' });
   } catch {
     return file;
   }
+}
+
+function hiddenField(name: string, value: string) {
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = name;
+  input.value = value;
+  return input;
+}
+
+function fileField(file: File) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.name = 'attachment';
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  input.files = transfer.files;
+  return input;
+}
+
+/** Classic multipart post. FormSubmit's AJAX endpoint accepts text but drops images. */
+function postQuoteForm(fields: Record<string, string>, photos: File[]): Promise<void> {
+  const iframeName = `gjr-quote-${Date.now()}`;
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.hidden = true;
+  iframe.setAttribute('aria-hidden', 'true');
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `https://formsubmit.co/${encodeURIComponent(QUOTE_INBOX)}`;
+  form.enctype = 'multipart/form-data';
+  form.target = iframeName;
+  form.acceptCharset = 'UTF-8';
+  form.hidden = true;
+
+  Object.entries(fields).forEach(([name, value]) => form.appendChild(hiddenField(name, value)));
+  photos.forEach((photo) => form.appendChild(fileField(photo)));
+
+  document.body.appendChild(iframe);
+  document.body.appendChild(form);
+
+  return new Promise((resolve) => {
+    let submitted = false;
+    const cleanup = () => {
+      form.remove();
+      iframe.remove();
+    };
+
+    iframe.addEventListener('load', () => {
+      if (!submitted) {
+        submitted = true;
+        form.submit();
+        return;
+      }
+      cleanup();
+      resolve();
+    });
+
+    window.setTimeout(() => {
+      cleanup();
+      resolve();
+    }, 20000);
+  });
 }
 
 export async function sendQuoteEmail(
@@ -40,47 +105,28 @@ export async function sendQuoteEmail(
     throw new Error('Please enter your name, phone, and address before sending.');
   }
 
-  const photos = await Promise.all(photoFiles.slice(0, 4).map((file, index) => compressPhoto(file, index)));
+  const photos = await Promise.all(photoFiles.slice(0, 5).map((file, index) => compressPhoto(file, index)));
 
   if (photoFiles.length > 0 && photos.length === 0) {
     throw new Error('Could not attach your photos. Please try smaller images or call 0451 198 226.');
   }
 
-  const message = [
-    `Name: ${customerName}`,
-    `Phone: ${phone}`,
-    `Email: ${customerEmail || 'Not provided'}`,
-    `Address: ${address}`,
-    `Service: ${service}`,
-    `What to remove: ${details}`,
-    `Photos: ${photos.length}`,
-    `Sent from: ${source}`,
-  ].join('\n');
-
-  const body = new FormData();
-  body.append('name', customerName);
-  body.append('email', customerEmail || QUOTE_INBOX);
-  body.append('Phone', phone);
-  body.append('Address', address);
-  body.append('Service', service);
-  body.append('message', message);
-  body.append('_subject', `Quote request from ${customerName}`);
-  body.append('_template', 'table');
-  body.append('_captcha', 'false');
-
-  photos.forEach((photo) => {
-    body.append('attachment', photo, photo.name);
-  });
-
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(QUOTE_INBOX)}`, {
-    method: 'POST',
-    headers: { Accept: 'application/json' },
-    body,
-  });
-
-  const result = (await response.json().catch(() => null)) as { success?: string | boolean; message?: string } | null;
-  const ok = response.ok && result?.success !== false && result?.success !== 'false';
-  if (!ok) {
-    throw new Error(result?.message || 'Could not send your quote request. Please call 0451 198 226.');
-  }
+  await postQuoteForm(
+    {
+      name: customerName,
+      email: customerEmail || QUOTE_INBOX,
+      Name: customerName,
+      Email: customerEmail || 'Not provided',
+      Phone: phone,
+      Postcode: address,
+      'What do you need removed?': service,
+      'Details of Your Junk': details,
+      'Sent from': source,
+      _subject: `Quote request from ${customerName}`,
+      _template: 'table',
+      _captcha: 'false',
+      _cc: QUOTE_COPY,
+    },
+    photos,
+  );
 }
