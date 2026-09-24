@@ -2,10 +2,22 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import quoteHandler from './api/quote.js';
+
+function quoteApiPlugin() {
+  return {
+    name: 'quote-api',
+    configureServer(server) {
+      server.middlewares.use('/api/quote', (req, res) => {
+        quoteHandler(req, res);
+      });
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), quoteApiPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
