@@ -2,16 +2,16 @@ const PLACE_ID = 'ChIJz4dwVMJL1moRa3AgGtIom4s';
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=Great%20Junk%20Removalist&query_place_id=${PLACE_ID}`;
 const WRITE_REVIEW_URL = `https://search.google.com/local/writereview?placeid=${PLACE_ID}`;
 
-function sendJson(res, status, data, cacheSeconds) {
+function sendJson(res, status, data) {
   const body = JSON.stringify(data);
   if (typeof res.status === 'function') {
-    res.setHeader('Cache-Control', `public, s-maxage=${cacheSeconds}, stale-while-revalidate=3600`);
+    res.setHeader('Cache-Control', 'no-store');
     res.status(status).json(data);
     return;
   }
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', `public, s-maxage=${cacheSeconds}, stale-while-revalidate=3600`);
+  res.setHeader('Cache-Control', 'no-store');
   res.end(body);
 }
 
@@ -29,13 +29,13 @@ function emptyPayload(configured) {
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
-    sendJson(res, 405, { ok: false, error: 'Method not allowed' }, 60);
+    sendJson(res, 405, { ok: false, error: 'Method not allowed' });
     return;
   }
 
   const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!key) {
-    sendJson(res, 200, emptyPayload(false), 60);
+    sendJson(res, 200, emptyPayload(false));
     return;
   }
 
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-      sendJson(res, 200, emptyPayload(true), 120);
+      sendJson(res, 200, emptyPayload(true));
       return;
     }
 
@@ -71,8 +71,8 @@ export default async function handler(req, res) {
       mapsUrl: data?.googleMapsUri || MAPS_URL,
       writeReviewUrl: WRITE_REVIEW_URL,
       reviews,
-    }, 60);
+    });
   } catch {
-    sendJson(res, 200, emptyPayload(true), 120);
+    sendJson(res, 200, emptyPayload(true));
   }
 }
