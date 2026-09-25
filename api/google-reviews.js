@@ -71,7 +71,7 @@ export default async function handler(req, res) {
       mapsUrl: data?.googleMapsUri || MAPS_URL,
       writeReviewUrl: WRITE_REVIEW_URL,
       reviews,
-    }, 900);
+    }, 60);
   } catch {
     sendJson(res, 200, emptyPayload(true), 120);
   }
