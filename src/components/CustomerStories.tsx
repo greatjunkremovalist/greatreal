@@ -7,36 +7,15 @@ import {
   ChevronRight,
   X,
   Send,
-  Sparkles,
 } from 'lucide-react';
 import { CustomerStory } from '../types';
-import { INITIAL_CUSTOMER_STORIES } from '../data/customerStories';
 import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
 
-const AI_SUMMARY_POINTS = [
-  'Careful Melbourne junk removal crews — no property damage.',
-  'Fast rubbish clearance — many jobs done in under an hour.',
-  'Clear all-inclusive pricing with no surprise tip fees.',
-];
-
 export const CustomerStories: React.FC = () => {
-  const [stories, setStories] = useState<CustomerStory[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_CUSTOMER_STORIES.length) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('Could not read customer stories from localStorage', e);
-    }
-    return INITIAL_CUSTOMER_STORIES;
-  });
+  const [stories, setStories] = useState<CustomerStory[]>([]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
@@ -54,7 +33,6 @@ export const CustomerStories: React.FC = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const google = useGoogleReviews();
   const visibleStories = useMemo(() => {
-    if (!google.reviews.length) return stories;
     return google.reviews.map((review): CustomerStory => ({
       id: review.id,
       authorName: review.authorName,
@@ -75,7 +53,7 @@ export const CustomerStories: React.FC = () => {
       verified: true,
       avatarUrl: review.authorPhoto,
     }));
-  }, [google.reviews, stories]);
+  }, [google.reviews]);
 
   useEffect(() => {
     if (visibleStories.length <= 1 || isModalOpen) return;
@@ -148,13 +126,8 @@ export const CustomerStories: React.FC = () => {
     }, 1500);
   };
 
-  const reviewCount = google.reviews.length ? google.count : visibleStories.length;
-  const avgRating = useMemo(() => {
-    if (google.rating !== null) return google.rating.toFixed(1);
-    if (!visibleStories.length) return '5.0';
-    const sum = visibleStories.reduce((acc, s) => acc + (s.rating || 5), 0);
-    return (sum / visibleStories.length).toFixed(1);
-  }, [google.rating, visibleStories]);
+  const reviewCount = google.count;
+  const avgRating = google.rating !== null ? google.rating.toFixed(1) : '–';
 
   return (
     <section className="w-full bg-[#f3f4f6] py-8 sm:py-10" id="reviews">
@@ -200,29 +173,7 @@ export const CustomerStories: React.FC = () => {
             </a>
           </div>
 
-          {/* Slim AI strip — not a tall card */}
-          <div className="mb-4 rounded-xl bg-[#252830] px-3.5 py-3 flex items-start gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#6366f1] flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5">
-                <span className="text-xs font-semibold text-[#c4b5fd]">AI summary</span>
-                <span className="text-[10px] text-slate-500">from {reviewCount} reviews</span>
-                <span className="text-[#fbbc04] text-[10px]">★★★★★</span>
-              </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
-                {AI_SUMMARY_POINTS.map((point) => (
-                  <li key={point.slice(0, 24)} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-slate-300 leading-snug">
-                    <CheckCircle2 className="w-3 h-3 text-white/60 shrink-0 mt-0.5" />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Reviews only — one row, never stacks with AI */}
+          {/* Reviews from Google only */}
           <div className="relative px-7 sm:px-9">
             <button
               type="button"
@@ -245,7 +196,12 @@ export const CustomerStories: React.FC = () => {
               key={currentIndex}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 gjr-fade-slide"
             >
-              {[0, 1, 2].map((offset) => {
+              {visibleStories.length === 0 && (
+                <p className="col-span-full py-6 text-center text-sm text-slate-300">
+                  Google reviews will show here when customers leave them.
+                </p>
+              )}
+              {Array.from({ length: Math.min(3, visibleStories.length) }, (_, offset) => {
                 const story = visibleStories[(currentIndex + offset) % visibleStories.length];
                 const isExpanded = expandedStories[story.id];
                 const hide =
