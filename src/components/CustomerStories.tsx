@@ -7,50 +7,12 @@ import {
   ChevronRight,
   X,
   Send,
-  Sparkles,
 } from 'lucide-react';
 import { CustomerStory } from '../types';
 import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
-
-function reviewSummaryPoints(
-  reviews: { authorName: string; rating: number; text: string }[],
-  rating: number | null,
-  count: number,
-): string[] {
-  const written = reviews.filter((review) => review.text.trim());
-  const points: string[] = [];
-
-  if (rating !== null && count > 0) {
-    points.push(
-      `Customers rate Great Junk Removalist ${rating.toFixed(1)} stars from ${count} Google review${count === 1 ? '' : 's'}.`,
-    );
-  }
-
-  if (written.length === 1) {
-    points.push(`${written[0].authorName} wrote “${written[0].text.trim()}”.`);
-  } else if (written.length > 1) {
-    points.push(
-      written
-        .slice(0, 3)
-        .map((review) => `${review.authorName} wrote “${review.text.trim()}”`)
-        .join(' '),
-    );
-  }
-
-  const fiveStar = reviews.filter((review) => review.rating >= 5).length;
-  if (fiveStar > 0) {
-    points.push(
-      fiveStar === reviews.length
-        ? 'Every published Google review is 5 stars.'
-        : `${fiveStar} published Google review${fiveStar === 1 ? ' is' : 's are'} 5 stars.`,
-    );
-  }
-
-  return points.slice(0, 3);
-}
 
 export const CustomerStories: React.FC = () => {
   const [stories, setStories] = useState<CustomerStory[]>([]);
@@ -166,7 +128,6 @@ export const CustomerStories: React.FC = () => {
 
   const reviewCount = google.count;
   const avgRating = google.rating !== null ? google.rating.toFixed(1) : '–';
-  const summaryPoints = reviewSummaryPoints(google.reviews, google.rating, google.count);
 
   return (
     <section className="w-full bg-[#f3f4f6] py-8 sm:py-10" id="reviews">
@@ -211,29 +172,6 @@ export const CustomerStories: React.FC = () => {
               Review us on Google
             </a>
           </div>
-
-          {summaryPoints.length > 0 && (
-            <div className="mb-4 rounded-xl bg-[#252830] px-3.5 py-3 flex items-start gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#6366f1] flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5">
-                  <span className="text-sm font-semibold text-[#c4b5fd]">AI summary</span>
-                  <span className="text-xs text-slate-400">from {reviewCount} reviews</span>
-                  <span className="text-[#fbbc04] text-xs">★★★★★</span>
-                </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
-                  {summaryPoints.map((point) => (
-                    <li key={point} className="flex items-start gap-1.5 text-sm text-slate-200 leading-snug">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-white/70 shrink-0 mt-0.5" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
 
           {/* Reviews from Google only */}
           <div className="relative px-7 sm:px-9">
