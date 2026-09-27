@@ -358,10 +358,10 @@ export const WorkShowcase: React.FC = () => {
 
         {/* Job Details & SEO Tags Box */}
         {currentJob.description && (
-          <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-800">
+          <div className="mt-4 px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-base sm:text-lg text-slate-900 leading-snug">
             <div>
-              <span className="font-semibold text-slate-800">{currentJob.title}: </span>
-              <span>{currentJob.description}</span>
+              <span className="font-bold text-slate-950">{currentJob.title}: </span>
+              <span className="font-medium">{currentJob.description}</span>
             </div>
             {!currentJob.illustrative && <div className="flex items-center gap-3 text-slate-700 font-medium flex-shrink-0">
               <span className="flex items-center gap-1">
