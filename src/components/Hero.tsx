@@ -144,7 +144,7 @@ export const Hero: React.FC<HeroProps> = ({
               </p>
             </div>
             <p className="text-base sm:text-lg text-slate-100 leading-relaxed max-w-md font-medium">
-              Same-day junk and rubbish removal for Melbourne homes, businesses and construction sites — furniture, appliances, green waste and renovation debris cleared.
+              Same-day junk and rubbish removal across Melbourne homes, businesses and construction sites — furniture, appliances, green waste and renovation debris cleared.
             </p>
 
             <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm sm:text-base text-slate-100 font-semibold">
