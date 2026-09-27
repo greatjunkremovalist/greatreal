@@ -53,19 +53,19 @@ const ServiceCardItem: React.FC<{
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-60 pointer-events-none" />
     </Link>
 
-    <div className="p-6 sm:p-7 flex flex-col justify-between items-center text-center flex-1">
+    <div className="px-4 py-5 sm:px-5 flex flex-col justify-between items-center text-center flex-1">
       <div>
         <Link to={`/services/${card.slug}`}>
           <h3 className="text-lg sm:text-xl font-black text-[#091b2f] group-hover:text-[#559400] transition-colors leading-snug">
             {card.title}
           </h3>
         </Link>
-        <p className="mt-3 text-xs sm:text-[13px] text-slate-800 leading-relaxed font-normal">
+        <p className="mt-2 text-[15px] sm:text-base text-slate-900 leading-snug font-medium">
           {card.description}
         </p>
       </div>
 
-      <div className="mt-6 pt-2 w-full flex flex-col gap-2">
+      <div className="mt-4 pt-1 w-full flex flex-col gap-2">
         <Link
           to={`/services/${card.slug}`}
           className="w-full min-w-[150px] px-6 py-2.5 bg-[#84d800] hover:bg-[#76c700] active:scale-[0.98] text-[#091b2f] font-black text-xs uppercase tracking-wider rounded shadow-sm hover:shadow transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"

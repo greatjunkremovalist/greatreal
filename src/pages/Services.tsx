@@ -64,11 +64,11 @@ export const Services: React.FC<ServicesProps> = ({ onOpenCall }) => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 </div>
-                <div className="p-6 flex flex-col flex-1 text-center">
+                <div className="px-5 py-5 flex flex-col flex-1 text-center">
                   <h2 className="text-lg font-extrabold text-[#091b2f] group-hover:text-[#559400] transition-colors">
                     {service.title} Melbourne
                   </h2>
-                  <p className="mt-2 text-sm text-slate-700 leading-relaxed line-clamp-3 flex-1">
+                  <p className="mt-2 text-base text-slate-900 leading-snug font-medium line-clamp-4 flex-1">
                     {service.description}
                   </p>
                   <span className="mt-5 inline-flex items-center justify-center gap-1.5 text-sm font-bold text-[#091b2f]">
