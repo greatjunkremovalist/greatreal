@@ -232,16 +232,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenCall }) => {
             Get Quote
           </Link>
           <div className="pt-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenCall();
-              }}
+            <a
+              href="tel:0451198226"
+              onClick={() => setMobileMenuOpen(false)}
               className="w-full flex items-center justify-center gap-2 py-3 bg-[#84d800] text-[#0a1c32] font-bold rounded-lg shadow"
             >
               <span>Call Us: 0451 198 226</span>
               <ArrowUpRight className="w-4 h-4" />
-            </button>
+            </a>
           </div>
         </div>
       )}

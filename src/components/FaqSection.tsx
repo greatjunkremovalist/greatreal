@@ -56,7 +56,19 @@ export const FaqSection: React.FC = () => {
                   }`}
                 >
                   <p className="text-slate-700 leading-relaxed pt-2 border-t border-slate-200/80 text-sm sm:text-base">
-                    {faq.answer}
+                    {faq.answer.split(/(0451 198 226)/g).map((part, partIndex) =>
+                      part === '0451 198 226' ? (
+                        <a
+                          key={partIndex}
+                          href="tel:0451198226"
+                          className="font-semibold text-[#559400] underline underline-offset-2 hover:text-[#091b2f]"
+                        >
+                          {part}
+                        </a>
+                      ) : (
+                        part
+                      ),
+                    )}
                   </p>
                 </div>
               </div>

@@ -103,7 +103,7 @@ export const WhyGjr: React.FC<WhyGjrProps> = ({ onOpenCall }) => {
               Whether we are helping a local business with an office strip-out or assisting a family with a garden overhaul, a clear space leads to a clearer mind — and we love being the Melbourne team that gets you there.
             </p>
             <p className="mb-6">
-              Ready to clear the clutter? Call <strong>0451 198 226</strong> or request a free junk removal quote online.
+              Ready to clear the clutter? Call <a href="tel:0451198226" className="font-bold text-[#559400] underline underline-offset-2 hover:text-[#091b2f]">0451 198 226</a> or request a free junk removal quote online.
             </p>
           </div>
         </div>

@@ -84,11 +84,15 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-medium mb-6 text-white">Contact us</h4>
             <p className="text-slate-200 text-base">
-              <a href="tel:0451198226" className="hover:text-[#74cb00] transition-colors">
+              <a href="tel:0451198226" className="underline underline-offset-2 hover:text-[#74cb00] transition-colors">
                 0451 198 226
               </a>
             </p>
-            <p className="text-slate-200">info@greatjunkremovalist.com.au</p>
+            <p className="text-slate-200">
+              <a href="mailto:info@greatjunkremovalist.com.au" className="underline underline-offset-2 hover:text-[#74cb00] transition-colors">
+                info@greatjunkremovalist.com.au
+              </a>
+            </p>
             
             <div className="w-full h-40 bg-slate-800 rounded-md overflow-hidden mt-4 mb-6">
               {/* Google Maps Embed for Melbourne */}
