@@ -36,9 +36,20 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-async function postQuoteForm(recipient: string, fields: Record<string, string>, photos: File[]): Promise<void> {
+/** Tally-style Junk Pics: plain clickable URLs (FormSubmit cannot render HTML). */
+function formatJunkPics(links: string[]): string {
+  if (!links.length) return 'No photos';
+  return links.join('\n');
+}
+
+async function postQuoteForm(
+  recipient: string,
+  fields: Record<string, string>,
+  photos: File[],
+): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([name, value]) => body.append(name, value));
+  // Same as Tally: each photo arrives as a downloadable image.jpg file.
   photos.forEach((photo) => body.append('attachment', photo, 'image.jpg'));
 
   const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
@@ -72,59 +83,45 @@ export async function sendQuoteEmail(
   }
 
   const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
+  let links: string[] = [];
 
-  const response = await fetch('/api/quote', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name,
-      email,
-      phone,
-      postcode,
-      service,
-      details,
-      photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-    }),
-  });
-
-  const result = (await response.json().catch(() => null)) as {
-    ok?: boolean;
-    error?: string;
-    links?: string[];
-    emailed?: boolean;
-  } | null;
-
-  if (!response.ok || !result?.ok) {
-    throw new Error(result?.error || 'Could not send your quote request. Please call 0451 198 226.');
+  if (photos.length > 0) {
+    const response = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; links?: string[] } | null;
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.error || 'Could not prepare your photo links. Please call 0451 198 226.');
+    }
+    links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
+    if (links.length === 0) {
+      throw new Error('Could not prepare your photo links. Please try smaller images or call 0451 198 226.');
+    }
   }
 
-  // Preferred path: server sent the Tally-styled HTML email (Resend or SMTP).
-  if (result.emailed) return;
-
-  const links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
-  if (photos.length > 0 && links.length === 0) {
-    throw new Error('Could not prepare your photo links. Please try smaller images or call 0451 198 226.');
-  }
-
-  // Fallback if RESEND_API_KEY / SMTP is not configured yet.
+  // Exact Tally field names and order (no value_calc).
   const fields = {
     Name: name,
     Email: email || 'Not provided',
     Phone_10_Digit_Number_: phone,
     Postcode: postcode,
     'What do you need removed?': service,
-    'Junk Pics': links.length ? links.join('\n') : 'No photos',
+    'Junk Pics': formatJunkPics(links),
     'Details of Your Junk': details,
     _replyto: email || 'info@greatjunkremovalist.com.au',
     _subject: `Quote request from ${name}`,
-    _template: 'basic',
+    _template: 'box',
     _captcha: 'false',
   };
 
   const results = await Promise.allSettled(
     QUOTE_RECIPIENTS.map((recipient) => postQuoteForm(recipient, fields, photos)),
   );
-  const failures = results.filter((resultItem): resultItem is PromiseRejectedResult => resultItem.status === 'rejected');
+  const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
   if (failures.length > 0) {
     throw new Error(
       failures
