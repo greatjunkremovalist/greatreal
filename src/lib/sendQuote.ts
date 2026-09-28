@@ -36,9 +36,20 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-async function postQuoteForm(recipient: string, fields: Record<string, string>, photos: File[]): Promise<void> {
+/** Tally-style Junk Pics: each line is a clickable "image.jpg" link. */
+function formatJunkPics(links: string[]): string {
+  if (!links.length) return 'No photos';
+  return links.map((url) => `<a href="${url}">image.jpg</a>`).join('\n');
+}
+
+async function postQuoteForm(
+  recipient: string,
+  fields: Record<string, string>,
+  photos: File[],
+): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([name, value]) => body.append(name, value));
+  // Same as Tally: each photo arrives as a downloadable image.jpg file.
   photos.forEach((photo) => body.append('attachment', photo, 'image.jpg'));
 
   const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
@@ -92,13 +103,14 @@ export async function sendQuoteEmail(
     }
   }
 
+  // Exact Tally field names and order (no value_calc).
   const fields = {
     Name: name,
     Email: email || 'Not provided',
     Phone_10_Digit_Number_: phone,
     Postcode: postcode,
     'What do you need removed?': service,
-    'Junk Pics': links.length ? links.join('\n') : 'No photos',
+    'Junk Pics': formatJunkPics(links),
     'Details of Your Junk': details,
     _replyto: email || 'info@greatjunkremovalist.com.au',
     _subject: `Quote request from ${name}`,
