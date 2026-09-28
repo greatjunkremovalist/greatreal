@@ -34,7 +34,7 @@ async function hostOnCatbox(bytes) {
 async function hostOnLitterbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
-  upload.append('time', '72h');
+  upload.append('time', '24h');
   upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
     method: 'POST',
@@ -46,6 +46,7 @@ async function hostOnLitterbox(bytes) {
 }
 
 async function hostOnTmpfiles(bytes) {
+  // tmpfiles.org free uploads expire in about an hour — only used as a last resort.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -56,6 +57,7 @@ async function hostOnTmpfiles(bytes) {
 }
 
 async function hostOnZeroX(bytes) {
+  // 0x0.st keeps files based on size; small JPEGs last well beyond 24 hours.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://0x0.st', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -64,7 +66,8 @@ async function hostOnZeroX(bytes) {
 }
 
 async function hostPhoto(bytes) {
-  const hosts = [hostOnCatbox, hostOnLitterbox, hostOnTmpfiles, hostOnZeroX];
+  // Prefer hosts that keep photos at least 24 hours (litterbox 24h, then longer-lived hosts).
+  const hosts = [hostOnLitterbox, hostOnCatbox, hostOnZeroX, hostOnTmpfiles];
   for (const host of hosts) {
     try {
       const url = await host(bytes);

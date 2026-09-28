@@ -36,10 +36,10 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/** Tally-style Junk Pics: each line is a clickable "image.jpg" link. */
+/** Tally-style Junk Pics: plain clickable URLs (FormSubmit cannot render HTML). */
 function formatJunkPics(links: string[]): string {
   if (!links.length) return 'No photos';
-  return links.map((url) => `<a href="${url}">image.jpg</a>`).join('\n');
+  return links.join('\n');
 }
 
 async function postQuoteForm(
