@@ -1,5 +1,8 @@
 export const maxDuration = 60;
 
+const QUOTE_RECIPIENTS = ['info@greatjunkremovalist.com.au', 'yogeshmehta8950@gmail.com'];
+const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
+
 function sendJson(res, status, data) {
   if (typeof res.status === 'function') {
     res.status(status).json(data);
@@ -20,7 +23,77 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
-const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Matches the Tally notification layout: bold label, value under it, image.jpg links. */
+function buildTallyHtml({ name, email, phone, postcode, service, details, links }) {
+  const junkPics = links.length
+    ? links
+        .map(
+          (url) =>
+            `<a href="${escapeHtml(url)}" style="color:#1a73e8;text-decoration:underline;">image.jpg</a>`,
+        )
+        .join('<br>')
+    : 'No photos';
+
+  const emailValue = email
+    ? `<a href="mailto:${escapeHtml(email)}" style="color:#1a73e8;text-decoration:underline;">${escapeHtml(email)}</a>`
+    : 'Not provided';
+
+  const row = (label, value) =>
+    `<div style="margin:0 0 18px 0;">` +
+    `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#111111;line-height:1.4;">${label}</div>` +
+    `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:400;color:#111111;line-height:1.5;margin-top:2px;">${value}</div>` +
+    `</div>`;
+
+  return `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#ffffff;">
+  <div style="max-width:560px;margin:0;padding:8px 4px 8px 12px;border-left:2px solid #c7c7c7;background:#ffffff;">
+    ${row('Name', escapeHtml(name))}
+    ${row('Email', emailValue)}
+    ${row('Phone_10_Digit_Number_', escapeHtml(phone))}
+    ${row('Postcode', escapeHtml(postcode))}
+    ${row('What do you need removed?', escapeHtml(service))}
+    ${row('Junk Pics', junkPics)}
+    ${row('Details of Your Junk', escapeHtml(details).replace(/\n/g, '<br>'))}
+  </div>
+</body>
+</html>`;
+}
+
+function buildTallyText({ name, email, phone, postcode, service, details, links }) {
+  const junkPics = links.length ? links.map(() => 'image.jpg').join('\n') + '\n' + links.join('\n') : 'No photos';
+  return [
+    'Name',
+    name,
+    '',
+    'Email',
+    email || 'Not provided',
+    '',
+    'Phone_10_Digit_Number_',
+    phone,
+    '',
+    'Postcode',
+    postcode,
+    '',
+    'What do you need removed?',
+    service,
+    '',
+    'Junk Pics',
+    junkPics,
+    '',
+    'Details of Your Junk',
+    details,
+  ].join('\n');
+}
 
 async function hostOnCatbox(bytes) {
   const upload = new FormData();
@@ -46,7 +119,6 @@ async function hostOnLitterbox(bytes) {
 }
 
 async function hostOnTmpfiles(bytes) {
-  // tmpfiles.org free uploads expire in about an hour — only used as a last resort.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -57,7 +129,6 @@ async function hostOnTmpfiles(bytes) {
 }
 
 async function hostOnZeroX(bytes) {
-  // 0x0.st keeps files based on size; small JPEGs last well beyond 24 hours.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://0x0.st', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -66,7 +137,6 @@ async function hostOnZeroX(bytes) {
 }
 
 async function hostPhoto(bytes) {
-  // Prefer hosts that keep photos at least 24 hours (litterbox 24h, then longer-lived hosts).
   const hosts = [hostOnLitterbox, hostOnCatbox, hostOnZeroX, hostOnTmpfiles];
   for (const host of hosts) {
     try {
@@ -75,6 +145,76 @@ async function hostPhoto(bytes) {
     } catch {
       // Try the next host.
     }
+  }
+  return '';
+}
+
+async function sendWithResend({ to, subject, html, text, replyTo }) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+
+  const from =
+    process.env.QUOTE_FROM_EMAIL ||
+    'Great Junk Removalist <onboarding@resend.dev>';
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+      reply_to: replyTo || undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Resend email failed (${response.status}): ${errText.slice(0, 200)}`);
+  }
+  return true;
+}
+
+async function sendWithSmtp({ to, subject, html, text, replyTo }) {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return false;
+
+  const nodemailer = await import('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: String(process.env.SMTP_SECURE || 'true') !== 'false',
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${user}>`,
+    to: Array.isArray(to) ? to.join(', ') : to,
+    subject,
+    html,
+    text,
+    replyTo: replyTo || undefined,
+  });
+  return true;
+}
+
+async function sendTallyQuoteEmail(payload) {
+  const html = buildTallyHtml(payload);
+  const text = buildTallyText(payload);
+  const subject = `Quote request from ${payload.name}`;
+  const replyTo = payload.email || undefined;
+
+  if (await sendWithResend({ to: QUOTE_RECIPIENTS, subject, html, text, replyTo })) {
+    return 'resend';
+  }
+  if (await sendWithSmtp({ to: QUOTE_RECIPIENTS, subject, html, text, replyTo })) {
+    return 'smtp';
   }
   return '';
 }
@@ -95,11 +235,31 @@ export default async function handler(req, res) {
     }
 
     if (photos.length > 0 && links.length === 0) {
-      sendJson(res, 502, { ok: false, error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.' });
+      sendJson(res, 502, {
+        ok: false,
+        error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.',
+      });
       return;
     }
 
-    sendJson(res, 200, { ok: true, links });
+    const quote = {
+      name: String(payload.name || '').trim(),
+      email: String(payload.email || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      postcode: String(payload.postcode || '').trim(),
+      service: String(payload.service || 'Not specified').trim(),
+      details: String(payload.details || 'No description provided').trim(),
+      links,
+    };
+
+    let emailed = false;
+    let provider = '';
+    if (quote.name && quote.phone && quote.postcode) {
+      provider = await sendTallyQuoteEmail(quote);
+      emailed = Boolean(provider);
+    }
+
+    sendJson(res, 200, { ok: true, links, emailed, provider });
   } catch (error) {
     sendJson(res, 500, {
       ok: false,
