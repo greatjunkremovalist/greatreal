@@ -17,7 +17,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 800;
+    const maxEdge = 700;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -28,7 +28,7 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.5));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.45));
     if (!blob) return file;
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -52,12 +52,9 @@ async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   return result.links.filter(Boolean);
 }
 
-/**
- * One simple FormSubmit POST to info@ only.
- * A single clean message is far less likely to land in spam than repeated sends.
- */
-function sendSimpleInfoEmail(fields: Record<string, string>): void {
-  const iframeName = `gjr_quote_${Date.now()}`;
+/** One FormSubmit POST — only to info@. */
+function sendToInfoOnly(fields: Record<string, string>): void {
+  const iframeName = `gjr_quote_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const iframe = document.createElement('iframe');
   iframe.name = iframeName;
   iframe.setAttribute('aria-hidden', 'true');
@@ -89,7 +86,8 @@ function sendSimpleInfoEmail(fields: Record<string, string>): void {
 }
 
 /**
- * Instant UI success. Background: host photos (if any), then one simple email to info@.
+ * Instant success in the UI.
+ * Email goes to info@ immediately (not waiting for photo uploads).
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -108,31 +106,46 @@ export async function sendQuoteEmail(
   }
 
   const files = photoFiles.slice(0, 5);
+  const photoNote = files.length
+    ? `${files.length} photo(s) uploaded — links will arrive in a follow-up email`
+    : 'No photos';
 
-  void (async () => {
-    let links: string[] = [];
-    try {
-      links = await hostPhotoLinks(files);
-    } catch {
-      links = [];
-    }
+  // Send the quote to info@ RIGHT NOW — do not wait for photo hosting.
+  sendToInfoOnly({
+    Name: name,
+    Email: email || 'Not provided',
+    Phone: phone,
+    Postcode: postcode,
+    Service: service,
+    Photos: photoNote,
+    Details: details,
+    _replyto: email || INFO_EMAIL,
+    _subject: `New quote — ${name} (${postcode})`,
+    _template: 'basic',
+    _captcha: 'false',
+    _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
+  });
 
-    // Simple inbox-friendly fields — no duplicate keys, no multi-send, basic template.
-    const fields: Record<string, string> = {
-      Name: name,
-      Email: email || 'Not provided',
-      Phone: phone,
-      Postcode: postcode,
-      Service: service,
-      Photos: links.length ? links.join('\n') : 'No photos',
-      Details: details,
-      _replyto: email || INFO_EMAIL,
-      _subject: `New quote — ${name} (${postcode})`,
-      _template: 'basic',
-      _captcha: 'false',
-      _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
-    };
-
-    sendSimpleInfoEmail(fields);
-  })();
+  // Optional photo links later — still only to info@.
+  if (files.length > 0) {
+    void (async () => {
+      try {
+        const links = await hostPhotoLinks(files);
+        if (!links.length) return;
+        sendToInfoOnly({
+          Name: name,
+          Phone: phone,
+          Postcode: postcode,
+          Photos: links.join('\n'),
+          _replyto: email || INFO_EMAIL,
+          _subject: `Photo links — ${name} (${postcode})`,
+          _template: 'basic',
+          _captcha: 'false',
+          _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
+        });
+      } catch {
+        // Quote text already sent; photo follow-up is best-effort.
+      }
+    })();
+  }
 }
