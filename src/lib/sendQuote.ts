@@ -101,6 +101,8 @@ export async function sendQuoteEmail(
 
     let links: string[] = [];
     let viewUrl = '';
+    let shortViewUrl = '';
+    let shortLinks: string[] = [];
     let emailedByApi = false;
 
     try {
@@ -121,12 +123,16 @@ export async function sendQuoteEmail(
         ok?: boolean;
         links?: string[];
         viewUrl?: string;
+        shortViewUrl?: string;
+        shortLinks?: string[];
         emailed?: boolean;
       } | null;
 
       if (result?.ok) {
         links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
         viewUrl = result.viewUrl || buildViewUrl(name, links);
+        shortViewUrl = result.shortViewUrl || viewUrl;
+        shortLinks = Array.isArray(result.shortLinks) ? result.shortLinks.filter(Boolean) : links;
         emailedByApi = Boolean(result.emailed);
       }
     } catch {
@@ -136,11 +142,14 @@ export async function sendQuoteEmail(
     if (!viewUrl && links.length) {
       viewUrl = buildViewUrl(name, links);
     }
+    if (!shortViewUrl) shortViewUrl = viewUrl;
+    if (!shortLinks.length) shortLinks = links;
 
     // API HTML mail already delivered to info@ with blue photo buttons.
     if (emailedByApi) return;
 
     // Guaranteed browser delivery to info@ only (FormSubmit).
+    // Short URLs so Gmail app makes them blue/tappable (long ones stay plain text).
     const fields: Record<string, string> = {
       Name: name,
       Email: email || 'Not provided',
@@ -148,7 +157,7 @@ export async function sendQuoteEmail(
       Postcode: postcode,
       Service: service,
       Details: details,
-      Open_photos: viewUrl || (images.length ? 'See attached image.jpg files' : 'No photos'),
+      Open_photos: shortViewUrl || (images.length ? 'See attached image.jpg files' : 'No photos'),
       _replyto: email || INFO_EMAIL,
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
@@ -156,7 +165,7 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    links.forEach((url, index) => {
+    shortLinks.forEach((url, index) => {
       fields[`Photo_${index + 1}`] = url;
     });
 

@@ -42,6 +42,23 @@ function buildViewUrl(name, links) {
   return `${SITE}/view-photos?n=${encodeURIComponent(name || 'Customer')}&d=${encoded}`;
 }
 
+/** Short links so Gmail app auto-linkifies (it skips very long plain URLs). */
+async function shortenUrl(targetUrl) {
+  if (!targetUrl) return '';
+  try {
+    const response = await fetch(
+      `https://is.gd/create.php?format=json&url=${encodeURIComponent(targetUrl)}`,
+      { headers: HOST_HEADERS },
+    );
+    const data = await response.json().catch(() => null);
+    const short = String(data?.shorturl || '').trim();
+    if (short.startsWith('http')) return short;
+  } catch {
+    // Fall through.
+  }
+  return targetUrl;
+}
+
 async function hostOnLitterbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
@@ -126,10 +143,11 @@ function buildHtmlEmail({ name, email, phone, postcode, service, details, links,
   <hr style="border:none;border-top:1px solid #ddd;margin:0 0 16px;" />
   <p style="margin:0 0 10px;"><strong>Photos</strong></p>
   ${photosHtml}
+  <!--INLINE_PHOTOS-->
 </body></html>`;
 }
 
-async function sendHtmlToInfo({ subject, html, text, replyTo }) {
+async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
   if (process.env.RESEND_API_KEY) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -150,23 +168,45 @@ async function sendHtmlToInfo({ subject, html, text, replyTo }) {
     return true;
   }
 
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  // info@ is on Titan — use Titan SMTP when credentials are set (HTML = blue links in Gmail app).
+  const user = process.env.SMTP_USER || process.env.TITAN_SMTP_USER;
+  const pass = process.env.SMTP_PASS || process.env.TITAN_SMTP_PASS;
   if (user && pass) {
     const nodemailer = await import('nodemailer');
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      host: process.env.SMTP_HOST || 'smtp.titan.email',
       port: Number(process.env.SMTP_PORT || 465),
       secure: String(process.env.SMTP_SECURE || 'true') !== 'false',
       auth: { user, pass },
     });
+
+    const buffers = Array.isArray(photoBuffers) ? photoBuffers : [];
+    const attachments = buffers.map((buf, index) => ({
+      filename: buffers.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg',
+      content: Buffer.from(buf, 'base64'),
+      contentType: 'image/jpeg',
+      cid: `photo${index}@greatjunk`,
+    }));
+
+    let htmlWithInline = html;
+    if (attachments.length) {
+      const inline = attachments
+        .map(
+          (att, index) =>
+            `<p style="margin:12px 0 0;"><img src="cid:${att.cid}" alt="Photo ${index + 1}" style="max-width:100%;border-radius:8px;" /></p>`,
+        )
+        .join('');
+      htmlWithInline = html.replace('<!--INLINE_PHOTOS-->', inline);
+    }
+
     await transporter.sendMail({
       from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${user}>`,
       to: INFO_EMAIL,
       subject,
-      html,
+      html: htmlWithInline,
       text,
       replyTo: replyTo || undefined,
+      attachments,
     });
     return true;
   }
@@ -203,11 +243,24 @@ export default async function handler(req, res) {
     const service = String(payload.service || 'Not specified').trim();
     const details = String(payload.details || 'No description provided').trim();
     const viewUrl = buildViewUrl(name || 'Customer', links);
+    const shortViewUrl = viewUrl ? await shortenUrl(viewUrl) : '';
+    const shortLinks = links.length
+      ? await Promise.all(links.map((url) => shortenUrl(url)))
+      : [];
 
     let emailed = false;
     if (name && phone) {
       const subject = `New quote — ${name} (${postcode || 'Melbourne'})`;
-      const html = buildHtmlEmail({ name, email, phone, postcode, service, details, links, viewUrl });
+      const html = buildHtmlEmail({
+        name,
+        email,
+        phone,
+        postcode,
+        service,
+        details,
+        links,
+        viewUrl: viewUrl || shortViewUrl,
+      });
       const text = [
         `Name: ${name}`,
         `Email: ${email || 'Not provided'}`,
@@ -215,7 +268,7 @@ export default async function handler(req, res) {
         `Postcode: ${postcode}`,
         `Service: ${service}`,
         `Details: ${details}`,
-        `Photos: ${viewUrl || links.join('\n') || 'No photos'}`,
+        `Photos: ${shortViewUrl || viewUrl || links.join('\n') || 'No photos'}`,
       ].join('\n');
 
       try {
@@ -224,13 +277,21 @@ export default async function handler(req, res) {
           html,
           text,
           replyTo: email || INFO_EMAIL,
+          photoBuffers: photos.map((photo) => photo.data),
         });
       } catch {
         emailed = false;
       }
     }
 
-    sendJson(res, 200, { ok: true, links, viewUrl, emailed });
+    sendJson(res, 200, {
+      ok: true,
+      links,
+      viewUrl,
+      shortViewUrl: shortViewUrl || viewUrl,
+      shortLinks: shortLinks.length ? shortLinks : links,
+      emailed,
+    });
   } catch (error) {
     sendJson(res, 500, {
       ok: false,
