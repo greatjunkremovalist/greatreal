@@ -1,5 +1,6 @@
 import { QuoteFormData } from '../types';
 
+/** Final destination for every quote */
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
 const SITE = 'https://www.greatjunkremovalist.com.au';
 
@@ -18,7 +19,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 800;
+    const maxEdge = 900;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -29,7 +30,7 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.5));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.55));
     if (!blob) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -38,8 +39,7 @@ async function compressPhoto(file: File): Promise<File> {
 }
 
 function encodePhotoLinks(links: string[]): string {
-  const json = JSON.stringify(links);
-  return btoa(unescape(encodeURIComponent(json)))
+  return btoa(unescape(encodeURIComponent(JSON.stringify(links))))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
@@ -50,10 +50,11 @@ function buildViewUrl(name: string, links: string[]): string {
   return `${SITE}/view-photos?n=${encodeURIComponent(name)}&d=${encodePhotoLinks(links)}`;
 }
 
-/** Simple FormSubmit text POST — this is what actually delivers the quote. */
-async function sendInfoEmail(fields: Record<string, string>, images: File[] = []): Promise<boolean> {
+async function postToInfo(fields: Record<string, string>, images: File[] = []): Promise<boolean> {
   const body = new FormData();
-  Object.entries(fields).forEach(([key, value]) => body.append(key, value));
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) body.append(key, String(value));
+  });
   images.forEach((image, index) => {
     body.append('attachment', image, images.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg');
   });
@@ -72,9 +73,10 @@ async function sendInfoEmail(fields: Record<string, string>, images: File[] = []
 }
 
 /**
- * Instant UI success. Email only to info@.
- * 1) Always send the quote text first (so mail never stops working)
- * 2) Then send photos as JPEG attachments + photo page link
+ * Final quote flow:
+ * - UI success is instant
+ * - Every quote goes ONLY to info@greatjunkremovalist.com.au
+ * - Photos hosted + JPEG attachments + openable photo page
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -95,15 +97,58 @@ export async function sendQuoteEmail(
   const files = photoFiles.slice(0, 5);
 
   void (async () => {
-    // Keep subject SHORT — long photo URLs in the subject were breaking FormSubmit delivery.
-    const baseFields: Record<string, string> = {
+    const images = files.length ? await Promise.all(files.map((f) => compressPhoto(f))) : [];
+
+    let links: string[] = [];
+    let viewUrl = '';
+    let emailedByApi = false;
+
+    try {
+      const response = await fetch('/api/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          postcode,
+          service,
+          details,
+          photos: await Promise.all(images.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+        }),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        links?: string[];
+        viewUrl?: string;
+        emailed?: boolean;
+      } | null;
+
+      if (result?.ok) {
+        links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
+        viewUrl = result.viewUrl || buildViewUrl(name, links);
+        emailedByApi = Boolean(result.emailed);
+      }
+    } catch {
+      // Fall through to FormSubmit.
+    }
+
+    if (!viewUrl && links.length) {
+      viewUrl = buildViewUrl(name, links);
+    }
+
+    // API HTML mail already delivered to info@ with blue photo buttons.
+    if (emailedByApi) return;
+
+    // Guaranteed browser delivery to info@ only (FormSubmit).
+    const fields: Record<string, string> = {
       Name: name,
       Email: email || 'Not provided',
       Phone: phone,
       Postcode: postcode,
       Service: service,
       Details: details,
-      Photos: files.length ? `${files.length} photo(s) — sending next` : 'No photos',
+      Open_photos: viewUrl || (images.length ? 'See attached image.jpg files' : 'No photos'),
       _replyto: email || INFO_EMAIL,
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
@@ -111,66 +156,23 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    // 1) ALWAYS send the quote to info@ first (text only) so email delivery works.
-    const quoteSent = await sendInfoEmail(baseFields, []);
-    if (!quoteSent) {
-      // One quick retry without extras.
-      await sendInfoEmail(baseFields, []);
+    links.forEach((url, index) => {
+      fields[`Photo_${index + 1}`] = url;
+    });
+
+    // First try: quote + JPEG attachments together.
+    let sent = await postToInfo(fields, images);
+
+    // If attachments caused a reject, still deliver the quote + photo page link.
+    if (!sent) {
+      sent = await postToInfo(fields, []);
     }
 
-    if (!files.length) return;
-
-    // 2) Host photos, then send a second info@ email with images + openable photo page.
-    try {
-      const images = await Promise.all(files.map((file) => compressPhoto(file)));
-
-      let links: string[] = [];
-      try {
-        const response = await fetch('/api/quote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            photos: await Promise.all(images.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-          }),
-        });
-        const result = (await response.json().catch(() => null)) as { ok?: boolean; links?: string[] } | null;
-        if (result?.ok && Array.isArray(result.links)) {
-          links = result.links.filter(Boolean);
-        }
-      } catch {
-        links = [];
-      }
-
-      const viewUrl = buildViewUrl(name, links);
-      const photoFields: Record<string, string> = {
-        Name: name,
-        Phone: phone,
-        Postcode: postcode,
-        _replyto: email || INFO_EMAIL,
-        _subject: `Quote photos — ${name} (${postcode})`,
-        _template: 'basic',
-        _captcha: 'false',
-        _next: `${SITE}/?quote=sent`,
-      };
-
-      if (viewUrl) {
-        photoFields.Open_photos = viewUrl;
-      }
-      links.forEach((url, index) => {
-        photoFields[`Photo_${index + 1}`] = url;
-      });
-      if (!links.length) {
-        photoFields.Photos = 'Photo files attached below';
-      }
-
-      // Send with JPEG attachments (Gmail shows these as tappable files).
-      let ok = await sendInfoEmail(photoFields, images);
-      if (!ok) {
-        // Fallback: links only, still to info@.
-        ok = await sendInfoEmail(photoFields, []);
-      }
-    } catch {
-      // Quote text already sent — photo follow-up is best effort.
+    // Last retry a few seconds later.
+    if (!sent) {
+      window.setTimeout(() => {
+        void postToInfo(fields, images.length ? images : []).catch(() => {});
+      }, 3000);
     }
   })();
 }

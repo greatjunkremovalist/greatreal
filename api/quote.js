@@ -1,6 +1,7 @@
 export const maxDuration = 60;
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
+const SITE = 'https://www.greatjunkremovalist.com.au';
 const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 
 function sendJson(res, status, data) {
@@ -23,15 +24,22 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildViewUrl(name, links) {
   if (!links.length) return '';
-  const json = JSON.stringify(links);
-  const encoded = Buffer.from(json, 'utf8')
+  const encoded = Buffer.from(JSON.stringify(links), 'utf8')
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
-  return `https://www.greatjunkremovalist.com.au/view-photos?n=${encodeURIComponent(name)}&d=${encoded}`;
+  return `${SITE}/view-photos?n=${encodeURIComponent(name || 'Customer')}&d=${encoded}`;
 }
 
 async function hostOnLitterbox(bytes) {
@@ -51,7 +59,11 @@ async function hostOnLitterbox(bytes) {
 async function hostOnTmpfiles(bytes) {
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', headers: HOST_HEADERS, body: upload });
+  const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+    method: 'POST',
+    headers: HOST_HEADERS,
+    body: upload,
+  });
   const data = await response.json().catch(() => null);
   const page = String(data?.data?.url || '');
   if (!page.startsWith('http')) return '';
@@ -62,7 +74,11 @@ async function hostOnCatbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
   upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://catbox.moe/user/api.php', { method: 'POST', headers: HOST_HEADERS, body: upload });
+  const response = await fetch('https://catbox.moe/user/api.php', {
+    method: 'POST',
+    headers: HOST_HEADERS,
+    body: upload,
+  });
   const url = (await response.text()).trim();
   return url.startsWith('http') ? url : '';
 }
@@ -81,58 +97,44 @@ async function hostPhoto(bytes) {
   }
 }
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function buildHtmlEmail({ name, email, phone, postcode, service, details, links, viewUrl }) {
-  const photoBlock = links.length
+  const photosHtml = links.length
     ? `
-      <p style="margin:0 0 12px 0;">
-        <a href="${escapeHtml(viewUrl)}" style="color:#1a73e8;font-size:16px;font-weight:700;text-decoration:underline;">
-          Tap here to view all photos
+      <p style="margin:0 0 14px 0;">
+        <a href="${escapeHtml(viewUrl)}"
+           style="display:inline-block;background:#1a73e8;color:#ffffff;padding:12px 18px;border-radius:8px;font-weight:700;text-decoration:none;">
+          View all photos
         </a>
       </p>
       ${links
         .map(
-          (url, index) => `
-        <p style="margin:0 0 10px 0;">
-          <a href="${escapeHtml(url)}" style="color:#1a73e8;font-size:15px;text-decoration:underline;">
-            Photo ${index + 1} — tap to open
-          </a>
-        </p>`,
+          (url, i) =>
+            `<p style="margin:0 0 8px 0;"><a href="${escapeHtml(url)}" style="color:#1a73e8;font-size:16px;text-decoration:underline;">Photo ${i + 1}</a></p>`,
         )
         .join('')}`
     : `<p style="margin:0;">No photos</p>`;
 
   return `<!DOCTYPE html>
-<html>
-<body style="margin:0;padding:20px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#111111;">
-  <h2 style="margin:0 0 16px 0;font-size:20px;">New quote</h2>
-  <p style="margin:0 0 8px 0;"><strong>Name:</strong> ${escapeHtml(name)}</p>
-  <p style="margin:0 0 8px 0;"><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#1a73e8;">${escapeHtml(email || 'Not provided')}</a></p>
-  <p style="margin:0 0 8px 0;"><strong>Phone:</strong> <a href="tel:${escapeHtml(phone)}" style="color:#1a73e8;">${escapeHtml(phone)}</a></p>
-  <p style="margin:0 0 8px 0;"><strong>Postcode:</strong> ${escapeHtml(postcode)}</p>
-  <p style="margin:0 0 8px 0;"><strong>Service:</strong> ${escapeHtml(service)}</p>
-  <p style="margin:0 0 8px 0;"><strong>Details:</strong> ${escapeHtml(details)}</p>
-  <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;" />
-  <p style="margin:0 0 8px 0;"><strong>Photos:</strong></p>
-  ${photoBlock}
-</body>
-</html>`;
+<html><body style="margin:0;padding:24px;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#111;font-size:15px;line-height:1.5;">
+  <h2 style="margin:0 0 16px;">New quote</h2>
+  <p style="margin:0 0 6px;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+  <p style="margin:0 0 6px;"><strong>Email:</strong> <a style="color:#1a73e8;" href="mailto:${escapeHtml(email)}">${escapeHtml(email || 'Not provided')}</a></p>
+  <p style="margin:0 0 6px;"><strong>Phone:</strong> <a style="color:#1a73e8;" href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></p>
+  <p style="margin:0 0 6px;"><strong>Postcode:</strong> ${escapeHtml(postcode)}</p>
+  <p style="margin:0 0 6px;"><strong>Service:</strong> ${escapeHtml(service)}</p>
+  <p style="margin:0 0 16px;"><strong>Details:</strong> ${escapeHtml(details)}</p>
+  <hr style="border:none;border-top:1px solid #ddd;margin:0 0 16px;" />
+  <p style="margin:0 0 10px;"><strong>Photos</strong></p>
+  ${photosHtml}
+</body></html>`;
 }
 
 async function sendHtmlToInfo({ subject, html, text, replyTo }) {
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey) {
+  if (process.env.RESEND_API_KEY) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${resendKey}`,
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -144,11 +146,8 @@ async function sendHtmlToInfo({ subject, html, text, replyTo }) {
         reply_to: replyTo || undefined,
       }),
     });
-    if (!response.ok) {
-      const err = await response.text().catch(() => '');
-      throw new Error(`Resend failed: ${err.slice(0, 180)}`);
-    }
-    return 'resend';
+    if (!response.ok) throw new Error(await response.text());
+    return true;
   }
 
   const user = process.env.SMTP_USER;
@@ -169,10 +168,10 @@ async function sendHtmlToInfo({ subject, html, text, replyTo }) {
       text,
       replyTo: replyTo || undefined,
     });
-    return 'smtp';
+    return true;
   }
 
-  return '';
+  return false;
 }
 
 export default async function handler(req, res) {
@@ -183,7 +182,7 @@ export default async function handler(req, res) {
 
   try {
     const payload = await readJson(req);
-    const photos = Array.isArray(payload.photos) ? payload.photos.filter((photo) => photo?.data).slice(0, 5) : [];
+    const photos = Array.isArray(payload.photos) ? payload.photos.filter((p) => p?.data).slice(0, 5) : [];
 
     const links = (
       await Promise.all(
@@ -197,59 +196,45 @@ export default async function handler(req, res) {
       )
     ).filter(Boolean);
 
-    if (photos.length > 0 && links.length === 0) {
-      // Don't hard-fail — quote text can still be emailed without photo links.
-      sendJson(res, 200, { ok: true, links: [], emailed: false });
-      return;
-    }
-
-    // Photos-only request (legacy client)
-    if (!payload.name && !payload.phone) {
-      sendJson(res, 200, { ok: true, links, emailed: false });
-      return;
-    }
-
     const name = String(payload.name || '').trim();
     const email = String(payload.email || '').trim();
     const phone = String(payload.phone || '').trim();
     const postcode = String(payload.postcode || '').trim();
     const service = String(payload.service || 'Not specified').trim();
     const details = String(payload.details || 'No description provided').trim();
-    const viewUrl = String(payload.viewUrl || '').trim() || buildViewUrl(name, links);
-
-    const subject = viewUrl
-      ? `New quote — ${name} (${postcode}) — ${viewUrl}`
-      : `New quote — ${name} (${postcode})`;
-    const html = buildHtmlEmail({ name, email, phone, postcode, service, details, links, viewUrl });
-    const text = [
-      `Name: ${name}`,
-      `Email: ${email || 'Not provided'}`,
-      `Phone: ${phone}`,
-      `Postcode: ${postcode}`,
-      `Service: ${service}`,
-      `Details: ${details}`,
-      `Photos: ${viewUrl || links.join(' ') || 'No photos'}`,
-    ].join('\n');
+    const viewUrl = buildViewUrl(name || 'Customer', links);
 
     let emailed = false;
-    let provider = '';
-    try {
-      provider = await sendHtmlToInfo({
-        subject,
-        html,
-        text,
-        replyTo: email || INFO_EMAIL,
-      });
-      emailed = Boolean(provider);
-    } catch {
-      emailed = false;
+    if (name && phone) {
+      const subject = `New quote — ${name} (${postcode || 'Melbourne'})`;
+      const html = buildHtmlEmail({ name, email, phone, postcode, service, details, links, viewUrl });
+      const text = [
+        `Name: ${name}`,
+        `Email: ${email || 'Not provided'}`,
+        `Phone: ${phone}`,
+        `Postcode: ${postcode}`,
+        `Service: ${service}`,
+        `Details: ${details}`,
+        `Photos: ${viewUrl || links.join('\n') || 'No photos'}`,
+      ].join('\n');
+
+      try {
+        emailed = await sendHtmlToInfo({
+          subject,
+          html,
+          text,
+          replyTo: email || INFO_EMAIL,
+        });
+      } catch {
+        emailed = false;
+      }
     }
 
-    sendJson(res, 200, { ok: true, links, viewUrl, emailed, provider });
+    sendJson(res, 200, { ok: true, links, viewUrl, emailed });
   } catch (error) {
     sendJson(res, 500, {
       ok: false,
-      error: error instanceof Error ? error.message : 'Could not send quote. Please call 0451 198 226.',
+      error: error instanceof Error ? error.message : 'Could not process quote.',
     });
   }
 }
