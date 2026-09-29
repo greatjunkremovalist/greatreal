@@ -198,10 +198,8 @@ export default async function handler(req, res) {
     ).filter(Boolean);
 
     if (photos.length > 0 && links.length === 0) {
-      sendJson(res, 502, {
-        ok: false,
-        error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.',
-      });
+      // Don't hard-fail — quote text can still be emailed without photo links.
+      sendJson(res, 200, { ok: true, links: [], emailed: false });
       return;
     }
 
