@@ -2,22 +2,10 @@ import { QuoteFormData } from '../types';
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result || '');
-      resolve(result.includes(',') ? result.split(',')[1] : result);
-    };
-    reader.onerror = () => reject(reader.error || new Error('Could not read a photo.'));
-    reader.readAsDataURL(file);
-  });
-}
-
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 700;
+    const maxEdge = 1000;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -25,107 +13,52 @@ async function compressPhoto(file: File): Promise<File> {
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    if (!context) return file;
+    if (!context) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.45));
-    if (!blob) return file;
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+    if (!blob) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
-    return file;
+    return new File([file], 'image.jpg', { type: file.type || 'image/jpeg' });
   }
-}
-
-async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
-  if (!photoFiles.length) return [];
-  const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
-  const response = await fetch('/api/quote', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-    }),
-    keepalive: true,
-  });
-  const result = (await response.json().catch(() => null)) as { ok?: boolean; links?: string[] } | null;
-  if (!response.ok || !result?.ok || !Array.isArray(result.links)) return [];
-  return result.links.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
-}
-
-/** One FormSubmit POST — only to info@. */
-function sendToInfoOnly(fields: Record<string, string>): void {
-  const iframeName = `gjr_quote_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const iframe = document.createElement('iframe');
-  iframe.name = iframeName;
-  iframe.setAttribute('aria-hidden', 'true');
-  iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;clip:rect(0,0,0,0);';
-  document.body.appendChild(iframe);
-
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = `https://formsubmit.co/${INFO_EMAIL}`;
-  form.target = iframeName;
-  form.acceptCharset = 'UTF-8';
-  form.style.display = 'none';
-
-  Object.entries(fields).forEach(([key, value]) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = key;
-    input.value = value;
-    form.appendChild(input);
-  });
-
-  document.body.appendChild(form);
-  form.submit();
-
-  window.setTimeout(() => {
-    form.remove();
-    iframe.remove();
-  }, 20000);
-}
-
-function buildQuoteFields(input: {
-  name: string;
-  email: string;
-  phone: string;
-  postcode: string;
-  service: string;
-  details: string;
-  links: string[];
-  photoCount: number;
-}): Record<string, string> {
-  const fields: Record<string, string> = {
-    Name: input.name,
-    Email: input.email || 'Not provided',
-    Phone: input.phone,
-    Postcode: input.postcode,
-    Service: input.service,
-    Details: input.details,
-    _replyto: input.email || INFO_EMAIL,
-    _subject: `New quote — ${input.name} (${input.postcode})`,
-    _template: 'basic',
-    _captcha: 'false',
-    _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
-  };
-
-  if (input.links.length > 0) {
-    // Each full https URL in its own field — email apps make these blue clickable links.
-    input.links.forEach((url, index) => {
-      fields[`Photo_${index + 1}`] = url;
-    });
-    // Also list them under Photos for easy scanning.
-    fields.Photos = input.links.join('\n');
-  } else {
-    fields.Photos = input.photoCount > 0 ? 'Photos could not be uploaded' : 'No photos';
-  }
-
-  return fields;
 }
 
 /**
- * Instant UI success. Email goes only to info@.
- * Photo https links are included as clickable URLs.
+ * Send only to info@.
+ * Photos are real file attachments named image.jpg — FormSubmit shows these as clickable downloads.
+ * (Plain URL text in FormSubmit emails is NOT clickable.)
+ */
+async function sendQuoteToInfo(fields: Record<string, string>, photos: File[]): Promise<void> {
+  const body = new FormData();
+  Object.entries(fields).forEach(([key, value]) => body.append(key, value));
+
+  photos.forEach((photo, index) => {
+    const filename = photos.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg';
+    body.append('attachment', photo, filename);
+  });
+
+  const response = await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
+    method: 'POST',
+    body,
+    keepalive: true,
+  });
+
+  const text = await response.text();
+  if (/needs Activation/i.test(text)) {
+    throw new Error(
+      `Open ${INFO_EMAIL} (and spam), click FormSubmit “Activate Form”, then send again.`,
+    );
+  }
+  if (!response.ok && !/submitted successfully/i.test(text)) {
+    // Still try iframe fallback without files if fetch is blocked.
+    throw new Error('FormSubmit did not accept the quote.');
+  }
+}
+
+/**
+ * Instant UI success. Email only to info@.
+ * Photos arrive as clickable image.jpg attachments in the email.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -146,26 +79,39 @@ export async function sendQuoteEmail(
   const files = photoFiles.slice(0, 5);
 
   void (async () => {
-    let links: string[] = [];
+    let photos: File[] = [];
     if (files.length > 0) {
       try {
-        links = await hostPhotoLinks(files);
+        photos = await Promise.all(files.map((file) => compressPhoto(file)));
       } catch {
-        links = [];
+        photos = files.map((file) => new File([file], 'image.jpg', { type: 'image/jpeg' }));
       }
     }
 
-    sendToInfoOnly(
-      buildQuoteFields({
-        name,
-        email,
-        phone,
-        postcode,
-        service,
-        details,
-        links,
-        photoCount: files.length,
-      }),
-    );
+    const fields: Record<string, string> = {
+      Name: name,
+      Email: email || 'Not provided',
+      Phone: phone,
+      Postcode: postcode,
+      Service: service,
+      Details: details,
+      Photos: photos.length
+        ? `${photos.length} photo(s) attached — tap the image.jpg file(s) above/below to open`
+        : 'No photos',
+      _replyto: email || INFO_EMAIL,
+      _subject: `New quote — ${name} (${postcode})`,
+      _template: 'basic',
+      _captcha: 'false',
+      _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
+    };
+
+    try {
+      await sendQuoteToInfo(fields, photos);
+    } catch {
+      // One retry shortly after — still only to info@.
+      window.setTimeout(() => {
+        void sendQuoteToInfo(fields, photos).catch(() => {});
+      }, 2000);
+    }
   })();
 }
