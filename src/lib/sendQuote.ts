@@ -38,10 +38,7 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/**
- * Prefer direct image.jpg host URLs (tmpfiles / litterbox / catbox).
- * Those are what Gmail turns into blue tappable links — same as your screenshot.
- */
+/** Direct image.jpg URLs that Gmail turns blue (same as your working screenshot). */
 function preferClickablePhotoUrls(links: string[]): string[] {
   const scored = links.filter((url) => /^https?:\/\//i.test(url));
   const tmpfiles = scored.filter((url) => /tmpfiles\.org\/dl\//i.test(url) && /image\.jpg/i.test(url));
@@ -49,6 +46,50 @@ function preferClickablePhotoUrls(links: string[]): string[] {
   const directJpg = scored.filter((url) => /\/image\.jpg(\?|$)/i.test(url));
   if (directJpg.length) return directJpg;
   return scored;
+}
+
+/** Browser-side tmpfiles upload — same host as the working Junk_Pics links. */
+async function hostOnTmpfilesClient(file: File): Promise<string> {
+  try {
+    const body = new FormData();
+    body.append('file', file, 'image.jpg');
+    const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+      method: 'POST',
+      body,
+    });
+    const data = (await response.json().catch(() => null)) as { data?: { url?: string } } | null;
+    const page = String(data?.data?.url || '');
+    if (!page.startsWith('http')) return '';
+    return page.replace('://tmpfiles.org/', '://tmpfiles.org/dl/');
+  } catch {
+    return '';
+  }
+}
+
+async function hostOnLitterboxClient(file: File): Promise<string> {
+  try {
+    const body = new FormData();
+    body.append('reqtype', 'fileupload');
+    body.append('time', '24h');
+    body.append('fileToUpload', file, 'image.jpg');
+    const response = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+      method: 'POST',
+      body,
+    });
+    const url = (await response.text()).trim();
+    return url.startsWith('http') ? url : '';
+  } catch {
+    return '';
+  }
+}
+
+async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
+  const links: string[] = [];
+  for (const image of images) {
+    const url = (await hostOnTmpfilesClient(image)) || (await hostOnLitterboxClient(image));
+    if (url) links.push(url);
+  }
+  return preferClickablePhotoUrls(links);
 }
 
 async function postToInfo(fields: Record<string, string>): Promise<boolean> {
@@ -64,16 +105,25 @@ async function postToInfo(fields: Record<string, string>): Promise<boolean> {
     });
     const text = await response.text();
     if (/needs Activation/i.test(text)) return false;
-    return response.ok || /submitted successfully/i.test(text);
+    if (response.status >= 500) return false;
+    return response.ok || /submitted successfully|thank you/i.test(text);
   } catch {
     return false;
   }
 }
 
+async function deliverToInfo(fields: Record<string, string>): Promise<boolean> {
+  if (await postToInfo(fields)) return true;
+  await new Promise((r) => window.setTimeout(r, 1500));
+  if (await postToInfo(fields)) return true;
+  await new Promise((r) => window.setTimeout(r, 3000));
+  return postToInfo(fields);
+}
+
 /**
  * Quote → info@ only.
- * Photos as Junk_Pics = direct https://tmpfiles.org/dl/.../image.jpg lines
- * (same blue clickable style as the working Gmail screenshot).
+ * Always FormSubmit with Junk_Pics = https://tmpfiles.org/dl/.../image.jpg
+ * (proven blue/clickable in Gmail).
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -98,6 +148,7 @@ export async function sendQuoteEmail(
 
     let links: string[] = [];
 
+    // 1) Server hosts photos (prefers tmpfiles).
     try {
       const response = await fetch('/api/quote', {
         method: 'POST',
@@ -115,21 +166,23 @@ export async function sendQuoteEmail(
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         links?: string[];
-        emailed?: boolean;
       } | null;
 
       if (result?.ok) {
         links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
-        // Real HTML <a> mail already sent — done.
-        if (result.emailed) return;
       }
     } catch {
-      // Fall through to FormSubmit.
+      // Browser fallback below.
     }
 
-    const junkPics = links.length ? links.join('\n') : images.length ? 'Photos could not be uploaded' : 'No photos';
+    // 2) If API gave no links, host from the browser (same tmpfiles URLs).
+    if (!links.length && images.length) {
+      links = await hostPhotosInBrowser(images);
+    }
 
-    // Same shape as the working Gmail email: Junk_Pics with raw image.jpg URLs.
+    const junkPics = links.length ? links.join('\n') : 'No photos';
+
+    // 3) Always deliver via FormSubmit — Junk_Pics with raw image.jpg links (clickable in Gmail).
     const fields: Record<string, string> = {
       Name: name,
       Email: email || 'Not provided',
@@ -145,11 +198,6 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    let sent = await postToInfo(fields);
-    if (!sent) {
-      window.setTimeout(() => {
-        void postToInfo(fields).catch(() => {});
-      }, 3000);
-    }
+    await deliverToInfo(fields);
   })();
 }
