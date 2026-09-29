@@ -18,7 +18,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 900;
+    const maxEdge = 850;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -29,7 +29,8 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.6));
+    // Keep files small so FormSubmit accepts image attachments.
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.55));
     if (!blob) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -37,8 +38,7 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/** URL-safe payload for /view-photos — opens as a normal page in the Gmail app. */
-export function encodePhotoLinks(links: string[]): string {
+function encodePhotoLinks(links: string[]): string {
   const json = JSON.stringify(links);
   return btoa(unescape(encodeURIComponent(json)))
     .replace(/\+/g, '-')
@@ -48,49 +48,83 @@ export function encodePhotoLinks(links: string[]): string {
 
 function buildViewUrl(name: string, links: string[]): string {
   if (!links.length) return '';
-  const d = encodePhotoLinks(links);
-  const n = encodeURIComponent(name);
-  return `${SITE}/view-photos?n=${n}&d=${d}`;
+  return `${SITE}/view-photos?n=${encodeURIComponent(name)}&d=${encodePhotoLinks(links)}`;
 }
 
-function buildPhotosHtmlFile(name: string, links: string[], viewUrl: string): File {
-  const list = links
-    .map(
-      (url, index) =>
-        `<p><a href="${url}" style="color:#1a73e8;font-size:18px;font-weight:700;">Tap to open photo ${index + 1}</a><br/>
-         <a href="${url}"><img src="${url}" alt="Photo ${index + 1}" style="max-width:100%;margin-top:8px;"/></a></p>`,
-    )
-    .join('');
+/**
+ * Native multipart form POST — most reliable way to get image.jpg attachments
+ * through FormSubmit and into the Gmail app.
+ */
+function postFormSubmitWithImages(fields: Record<string, string>, images: File[]): void {
+  const iframeName = `gjr_fs_${Date.now()}`;
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;clip:rect(0,0,0,0);';
+  document.body.appendChild(iframe);
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Photos — ${name}</title></head>
-<body style="font-family:Arial,sans-serif;padding:20px;">
-  <h1>Quote photos — ${name}</h1>
-  ${viewUrl ? `<p><a href="${viewUrl}" style="color:#1a73e8;font-size:18px;font-weight:700;">Open photo page</a></p>` : ''}
-  ${list}
-</body></html>`;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `https://formsubmit.co/${INFO_EMAIL}`;
+  form.enctype = 'multipart/form-data';
+  form.target = iframeName;
+  form.acceptCharset = 'UTF-8';
+  form.style.display = 'none';
 
-  return new File([html], 'CLICK-TO-VIEW-PHOTOS.html', { type: 'text/html' });
+  Object.entries(fields).forEach(([key, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  // Only JPEG attachments — HTML/other types can make FormSubmit drop ALL files.
+  images.forEach((image, index) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.name = 'attachment';
+    const file = new File(
+      [image],
+      images.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg',
+      { type: 'image/jpeg' },
+    );
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+
+  window.setTimeout(() => {
+    form.remove();
+    iframe.remove();
+  }, 25000);
 }
 
-/** FormSubmit fallback — Gmail app: tap URL in the subject, or open attachments. */
-async function sendFormSubmitFallback(
-  fields: Record<string, string>,
-  attachments: File[],
-): Promise<void> {
+async function postFormSubmitFetch(fields: Record<string, string>, images: File[]): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([key, value]) => body.append(key, value));
-  attachments.forEach((file) => body.append('attachment', file, file.name));
+  images.forEach((image, index) => {
+    body.append(
+      'attachment',
+      image,
+      images.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg',
+    );
+  });
 
   await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
     method: 'POST',
     body,
-    keepalive: true,
   });
 }
 
 /**
- * Instant UI success. Email only to info@ (works in Gmail app).
- * Prefers HTML email with blue tap links; falls back to FormSubmit + photo page URL.
+ * Instant success. Mail only to info@.
+ * - JPEG attachments via real form POST (show as tappable files in Gmail)
+ * - Photo page URL in the subject (Gmail makes subject links tappable)
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -111,58 +145,50 @@ export async function sendQuoteEmail(
   const files = photoFiles.slice(0, 5);
 
   void (async () => {
-    const photos = files.length ? await Promise.all(files.map((file) => compressPhoto(file))) : [];
-
-    const apiResponse = await fetch('/api/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        email,
-        phone,
-        postcode,
-        service,
-        details,
-        photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-        viewUrl: '', // filled after links return — first call hosts photos
-      }),
-      keepalive: true,
-    }).catch(() => null);
+    const images = files.length ? await Promise.all(files.map((file) => compressPhoto(file))) : [];
 
     let links: string[] = [];
-    let emailed = false;
+    if (images.length) {
+      try {
+        const response = await fetch('/api/quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            postcode,
+            service,
+            details,
+            photos: await Promise.all(images.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+          }),
+        });
+        const result = (await response.json().catch(() => null)) as {
+          ok?: boolean;
+          links?: string[];
+          emailed?: boolean;
+          viewUrl?: string;
+        } | null;
 
-    if (apiResponse) {
-      const result = (await apiResponse.json().catch(() => null)) as {
-        ok?: boolean;
-        links?: string[];
-        emailed?: boolean;
-      } | null;
-      if (result?.ok && Array.isArray(result.links)) links = result.links.filter(Boolean);
-      emailed = Boolean(result?.emailed);
+        if (result?.emailed) {
+          // HTML email already sent to info@ with blue tap links.
+          return;
+        }
+        if (result?.ok && Array.isArray(result.links)) {
+          links = result.links.filter(Boolean);
+        }
+      } catch {
+        links = [];
+      }
+    } else {
+      // No photos — still notify info@ via FormSubmit.
     }
 
     const viewUrl = buildViewUrl(name, links);
 
-    // If API hosted photos but could not send HTML mail, send a second API attempt is skipped —
-    // FormSubmit fallback below includes the Gmail-friendly view URL.
-    if (emailed) return;
-
-    const attachments: File[] = [];
-    if (links.length) {
-      attachments.push(buildPhotosHtmlFile(name, links, viewUrl));
-      photos.forEach((photo, index) => {
-        attachments.push(
-          new File([photo], photos.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg', {
-            type: 'image/jpeg',
-          }),
-        );
-      });
-    }
-
-    // Put the website photo link in the subject — Gmail app often makes subject URLs tappable.
+    // Subject URL is tappable in Gmail app even when FormSubmit body text is not.
     const subject = viewUrl
-      ? `New quote — ${name} (${postcode}) — Photos: ${viewUrl}`
+      ? `New quote — ${name} (${postcode}) — VIEW PHOTOS: ${viewUrl}`
       : `New quote — ${name} (${postcode})`;
 
     const fields: Record<string, string> = {
@@ -172,12 +198,6 @@ export async function sendQuoteEmail(
       Postcode: postcode,
       Service: service,
       Details: details,
-      Open_photos_in_browser: viewUrl || 'No photos',
-      Photos: viewUrl
-        ? `Open this page to view photos: ${viewUrl}`
-        : photos.length
-          ? 'See attached image files'
-          : 'No photos',
       _replyto: email || INFO_EMAIL,
       _subject: subject,
       _template: 'basic',
@@ -185,12 +205,21 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    try {
-      await sendFormSubmitFallback(fields, attachments);
-    } catch {
-      window.setTimeout(() => {
-        void sendFormSubmitFallback(fields, attachments).catch(() => {});
-      }, 2000);
+    if (viewUrl) {
+      // Keep this field as the URL alone — easier to copy if needed.
+      fields.View_photos = viewUrl;
+    } else if (images.length) {
+      fields.Photos = 'See attached image.jpg file(s) in this email';
+    } else {
+      fields.Photos = 'No photos';
     }
+
+    // Primary: browser form with JPEG attachments (Gmail shows these as files you can tap).
+    postFormSubmitWithImages(fields, images);
+
+    // Backup fetch path (also JPEG only).
+    window.setTimeout(() => {
+      void postFormSubmitFetch(fields, images).catch(() => {});
+    }, 1200);
   })();
 }
