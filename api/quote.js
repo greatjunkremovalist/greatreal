@@ -46,7 +46,6 @@ async function hostOnLitterbox(bytes) {
 }
 
 async function hostOnTmpfiles(bytes) {
-  // tmpfiles.org free uploads expire in about an hour — only used as a last resort.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -57,7 +56,6 @@ async function hostOnTmpfiles(bytes) {
 }
 
 async function hostOnZeroX(bytes) {
-  // 0x0.st keeps files based on size; small JPEGs last well beyond 24 hours.
   const upload = new FormData();
   upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://0x0.st', { method: 'POST', headers: HOST_HEADERS, body: upload });
@@ -66,17 +64,18 @@ async function hostOnZeroX(bytes) {
 }
 
 async function hostPhoto(bytes) {
-  // Prefer hosts that keep photos at least 24 hours (litterbox 24h, then longer-lived hosts).
-  const hosts = [hostOnLitterbox, hostOnCatbox, hostOnZeroX, hostOnTmpfiles];
-  for (const host of hosts) {
-    try {
-      const url = await host(bytes);
-      if (url) return url;
-    } catch {
-      // Try the next host.
-    }
+  // Race hosts — first working link wins instead of waiting on each in order.
+  try {
+    return await Promise.any(
+      [hostOnLitterbox, hostOnTmpfiles, hostOnCatbox, hostOnZeroX].map(async (host) => {
+        const url = await host(bytes);
+        if (!url) throw new Error('empty');
+        return url;
+      }),
+    );
+  } catch {
+    return '';
   }
-  return '';
 }
 
 export default async function handler(req, res) {
@@ -88,14 +87,24 @@ export default async function handler(req, res) {
   try {
     const payload = await readJson(req);
     const photos = Array.isArray(payload.photos) ? payload.photos.filter((photo) => photo?.data).slice(0, 5) : [];
-    const links = [];
-    for (const photo of photos) {
-      const url = await hostPhoto(Buffer.from(photo.data, 'base64'));
-      if (url) links.push(url);
-    }
+
+    const links = (
+      await Promise.all(
+        photos.map(async (photo) => {
+          try {
+            return await hostPhoto(Buffer.from(photo.data, 'base64'));
+          } catch {
+            return '';
+          }
+        }),
+      )
+    ).filter(Boolean);
 
     if (photos.length > 0 && links.length === 0) {
-      sendJson(res, 502, { ok: false, error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.' });
+      sendJson(res, 502, {
+        ok: false,
+        error: 'Could not prepare your photo links. Please try smaller images or call 0451 198 226.',
+      });
       return;
     }
 

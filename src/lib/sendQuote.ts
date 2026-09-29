@@ -19,7 +19,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 1200;
+    const maxEdge = 900;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -30,7 +30,7 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.62));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.55));
     if (!blob) return file;
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -43,21 +43,13 @@ function formatJunkPics(links: string[]): string {
   return links.join('\n');
 }
 
-async function postQuoteForm(
-  recipient: string,
-  fields: Record<string, string>,
-  photos: File[],
-): Promise<void> {
+async function postQuoteForm(recipient: string, fields: Record<string, string>): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([name, value]) => body.append(name, value));
-  photos.forEach((photo) => body.append('attachment', photo, 'image.jpg'));
 
   const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
     method: 'POST',
     body,
-    headers: {
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
   });
   const text = await response.text();
 
@@ -122,29 +114,17 @@ export async function sendQuoteEmail(
     _captcha: 'false',
   };
 
-  let infoReached = false;
-  const errors: string[] = [];
+  // Send both in parallel (no heavy file attachments — photo links are already in Junk Pics).
+  // Show success as soon as the first one is accepted; the other keeps running in the background.
+  const infoSend = postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL });
+  const backupSend = postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL });
 
-  // 1) Send directly to info@ (primary business inbox), CC the backup Gmail.
   try {
-    await postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL }, photos);
-    infoReached = true;
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : `Could not send to ${INFO_EMAIL}.`);
+    await Promise.any([infoSend, backupSend]);
+  } catch {
+    throw new Error(`Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`);
   }
 
-  // 2) Also send via Gmail and CC info@ so info still gets every quote if only Gmail is activated.
-  try {
-    await postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL }, photos);
-    infoReached = true;
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : `Could not send to ${BACKUP_EMAIL}.`);
-  }
-
-  if (!infoReached) {
-    throw new Error(
-      errors.join(' ') ||
-        `Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`,
-    );
-  }
+  void infoSend.catch(() => {});
+  void backupSend.catch(() => {});
 }
