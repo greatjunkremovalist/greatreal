@@ -36,11 +36,6 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-function formatJunkPics(links: string[]): string {
-  if (!links.length) return 'No photos';
-  return links.join('\n');
-}
-
 async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   if (!photoFiles.length) return [];
   const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
@@ -57,13 +52,16 @@ async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   return result.links.filter(Boolean);
 }
 
-/** Native form POST in a hidden iframe — most reliable FormSubmit path. */
-function postViaHiddenForm(fields: Record<string, string>): void {
-  const iframeName = `gjr_fs_${Date.now()}`;
+/**
+ * One simple FormSubmit POST to info@ only.
+ * A single clean message is far less likely to land in spam than repeated sends.
+ */
+function sendSimpleInfoEmail(fields: Record<string, string>): void {
+  const iframeName = `gjr_quote_${Date.now()}`;
   const iframe = document.createElement('iframe');
   iframe.name = iframeName;
   iframe.setAttribute('aria-hidden', 'true');
-  iframe.style.cssText = 'display:none;width:0;height:0;border:0;';
+  iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;clip:rect(0,0,0,0);';
   document.body.appendChild(iframe);
 
   const form = document.createElement('form');
@@ -73,10 +71,10 @@ function postViaHiddenForm(fields: Record<string, string>): void {
   form.acceptCharset = 'UTF-8';
   form.style.display = 'none';
 
-  Object.entries(fields).forEach(([name, value]) => {
+  Object.entries(fields).forEach(([key, value]) => {
     const input = document.createElement('input');
     input.type = 'hidden';
-    input.name = name;
+    input.name = key;
     input.value = value;
     form.appendChild(input);
   });
@@ -87,38 +85,11 @@ function postViaHiddenForm(fields: Record<string, string>): void {
   window.setTimeout(() => {
     form.remove();
     iframe.remove();
-  }, 15000);
-}
-
-async function postViaFetch(fields: Record<string, string>): Promise<void> {
-  const body = new FormData();
-  Object.entries(fields).forEach(([name, value]) => body.append(name, value));
-  await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(INFO_EMAIL)}`, {
-    method: 'POST',
-    body,
-    headers: { Accept: 'application/json' },
-    keepalive: true,
-  });
-}
-
-async function deliverToInfoOnly(fields: Record<string, string>): Promise<void> {
-  // Primary: real browser form POST (same method FormSubmit documents).
-  postViaHiddenForm(fields);
-  // Backup: ajax fetch in case the iframe path is blocked.
-  try {
-    await postViaFetch(fields);
-  } catch {
-    // Ignore — iframe submit already fired.
-  }
-  // One delayed retry for flaky FormSubmit responses.
-  window.setTimeout(() => {
-    postViaHiddenForm(fields);
-  }, 3000);
+  }, 20000);
 }
 
 /**
- * Validates instantly and returns immediately so the UI can show success.
- * Delivers the quote only to info@greatjunkremovalist.com.au in the background.
+ * Instant UI success. Background: host photos (if any), then one simple email to info@.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -146,29 +117,22 @@ export async function sendQuoteEmail(
       links = [];
     }
 
-    const fields = {
+    // Simple inbox-friendly fields — no duplicate keys, no multi-send, basic template.
+    const fields: Record<string, string> = {
       Name: name,
       Email: email || 'Not provided',
-      email: email || 'Not provided',
-      Phone_10_Digit_Number_: phone,
+      Phone: phone,
       Postcode: postcode,
-      'What do you need removed?': service,
-      'Junk Pics': formatJunkPics(links),
-      'Details of Your Junk': details,
+      Service: service,
+      Photos: links.length ? links.join('\n') : 'No photos',
+      Details: details,
       _replyto: email || INFO_EMAIL,
-      _subject: `Quote request from ${name}`,
-      _template: 'box',
+      _subject: `New quote — ${name} (${postcode})`,
+      _template: 'basic',
       _captcha: 'false',
-      _honey: '',
-      _next: typeof window !== 'undefined' ? `${window.location.origin}/?quote=sent` : 'https://www.greatjunkremovalist.com.au/?quote=sent',
+      _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
     };
 
-    try {
-      await deliverToInfoOnly(fields);
-    } catch {
-      window.setTimeout(() => {
-        postViaHiddenForm(fields);
-      }, 4000);
-    }
+    sendSimpleInfoEmail(fields);
   })();
 }
