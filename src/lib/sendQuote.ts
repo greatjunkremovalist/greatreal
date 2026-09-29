@@ -49,7 +49,7 @@ async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   });
   const result = (await response.json().catch(() => null)) as { ok?: boolean; links?: string[] } | null;
   if (!response.ok || !result?.ok || !Array.isArray(result.links)) return [];
-  return result.links.filter(Boolean);
+  return result.links.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
 }
 
 /** One FormSubmit POST — only to info@. */
@@ -85,9 +85,47 @@ function sendToInfoOnly(fields: Record<string, string>): void {
   }, 20000);
 }
 
+function buildQuoteFields(input: {
+  name: string;
+  email: string;
+  phone: string;
+  postcode: string;
+  service: string;
+  details: string;
+  links: string[];
+  photoCount: number;
+}): Record<string, string> {
+  const fields: Record<string, string> = {
+    Name: input.name,
+    Email: input.email || 'Not provided',
+    Phone: input.phone,
+    Postcode: input.postcode,
+    Service: input.service,
+    Details: input.details,
+    _replyto: input.email || INFO_EMAIL,
+    _subject: `New quote — ${input.name} (${input.postcode})`,
+    _template: 'basic',
+    _captcha: 'false',
+    _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
+  };
+
+  if (input.links.length > 0) {
+    // Each full https URL in its own field — email apps make these blue clickable links.
+    input.links.forEach((url, index) => {
+      fields[`Photo_${index + 1}`] = url;
+    });
+    // Also list them under Photos for easy scanning.
+    fields.Photos = input.links.join('\n');
+  } else {
+    fields.Photos = input.photoCount > 0 ? 'Photos could not be uploaded' : 'No photos';
+  }
+
+  return fields;
+}
+
 /**
- * Instant success in the UI.
- * Email goes to info@ immediately (not waiting for photo uploads).
+ * Instant UI success. Email goes only to info@.
+ * Photo https links are included as clickable URLs.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -106,46 +144,28 @@ export async function sendQuoteEmail(
   }
 
   const files = photoFiles.slice(0, 5);
-  const photoNote = files.length
-    ? `${files.length} photo(s) uploaded — links will arrive in a follow-up email`
-    : 'No photos';
 
-  // Send the quote to info@ RIGHT NOW — do not wait for photo hosting.
-  sendToInfoOnly({
-    Name: name,
-    Email: email || 'Not provided',
-    Phone: phone,
-    Postcode: postcode,
-    Service: service,
-    Photos: photoNote,
-    Details: details,
-    _replyto: email || INFO_EMAIL,
-    _subject: `New quote — ${name} (${postcode})`,
-    _template: 'basic',
-    _captcha: 'false',
-    _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
-  });
-
-  // Optional photo links later — still only to info@.
-  if (files.length > 0) {
-    void (async () => {
+  void (async () => {
+    let links: string[] = [];
+    if (files.length > 0) {
       try {
-        const links = await hostPhotoLinks(files);
-        if (!links.length) return;
-        sendToInfoOnly({
-          Name: name,
-          Phone: phone,
-          Postcode: postcode,
-          Photos: links.join('\n'),
-          _replyto: email || INFO_EMAIL,
-          _subject: `Photo links — ${name} (${postcode})`,
-          _template: 'basic',
-          _captcha: 'false',
-          _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
-        });
+        links = await hostPhotoLinks(files);
       } catch {
-        // Quote text already sent; photo follow-up is best-effort.
+        links = [];
       }
-    })();
-  }
+    }
+
+    sendToInfoOnly(
+      buildQuoteFields({
+        name,
+        email,
+        phone,
+        postcode,
+        service,
+        details,
+        links,
+        photoCount: files.length,
+      }),
+    );
+  })();
 }
