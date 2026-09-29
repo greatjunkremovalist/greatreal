@@ -1,6 +1,7 @@
 import { QuoteFormData } from '../types';
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
+const SITE = 'https://www.greatjunkremovalist.com.au';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -17,7 +18,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 1000;
+    const maxEdge = 900;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -28,7 +29,7 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.68));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.6));
     if (!blob) return new File([file], 'image.jpg', { type: 'image/jpeg' });
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -36,84 +37,60 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-async function hostPhotoLinks(photos: File[]): Promise<string[]> {
-  if (!photos.length) return [];
-  const response = await fetch('/api/quote', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-    }),
-    keepalive: true,
-  });
-  const result = (await response.json().catch(() => null)) as { ok?: boolean; links?: string[] } | null;
-  if (!response.ok || !result?.ok || !Array.isArray(result.links)) return [];
-  return result.links.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url));
+/** URL-safe payload for /view-photos — opens as a normal page in the Gmail app. */
+export function encodePhotoLinks(links: string[]): string {
+  const json = JSON.stringify(links);
+  return btoa(unescape(encodeURIComponent(json)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
 }
 
-/** HTML file the customer can open — contains real blue clickable photo links. */
-function buildPhotosHtmlFile(name: string, links: string[]): File {
-  const anchors = links
+function buildViewUrl(name: string, links: string[]): string {
+  if (!links.length) return '';
+  const d = encodePhotoLinks(links);
+  const n = encodeURIComponent(name);
+  return `${SITE}/view-photos?n=${n}&d=${d}`;
+}
+
+function buildPhotosHtmlFile(name: string, links: string[], viewUrl: string): File {
+  const list = links
     .map(
-      (url, index) => `
-      <p style="margin:16px 0;">
-        <a href="${url}" style="color:#1a73e8;font-size:18px;font-weight:700;">
-          Click to view photo ${index + 1}
-        </a>
-        <br/>
-        <a href="${url}">
-          <img src="${url}" alt="Photo ${index + 1}" style="max-width:100%;margin-top:8px;border-radius:8px;" />
-        </a>
-      </p>`,
+      (url, index) =>
+        `<p><a href="${url}" style="color:#1a73e8;font-size:18px;font-weight:700;">Tap to open photo ${index + 1}</a><br/>
+         <a href="${url}"><img src="${url}" alt="Photo ${index + 1}" style="max-width:100%;margin-top:8px;"/></a></p>`,
     )
     .join('');
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Quote photos — ${name}</title>
-</head>
-<body style="font-family:Arial,sans-serif;padding:20px;background:#fff;color:#111;">
-  <h1 style="font-size:22px;">Quote photos — ${name}</h1>
-  <p>Tap a blue link or image below to open the photo.</p>
-  ${anchors || '<p>No photos.</p>'}
-</body>
-</html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Photos — ${name}</title></head>
+<body style="font-family:Arial,sans-serif;padding:20px;">
+  <h1>Quote photos — ${name}</h1>
+  ${viewUrl ? `<p><a href="${viewUrl}" style="color:#1a73e8;font-size:18px;font-weight:700;">Open photo page</a></p>` : ''}
+  ${list}
+</body></html>`;
 
   return new File([html], 'CLICK-TO-VIEW-PHOTOS.html', { type: 'text/html' });
 }
 
-/**
- * FormSubmit shows attachments as clickable files.
- * Plain URL text in FormSubmit emails is never clickable — so we attach:
- * 1) CLICK-TO-VIEW-PHOTOS.html (blue links inside)
- * 2) image.jpg files
- */
-async function sendToInfoOnly(fields: Record<string, string>, attachments: File[]): Promise<void> {
+/** FormSubmit fallback — Gmail app: tap URL in the subject, or open attachments. */
+async function sendFormSubmitFallback(
+  fields: Record<string, string>,
+  attachments: File[],
+): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([key, value]) => body.append(key, value));
-  attachments.forEach((file) => {
-    body.append('attachment', file, file.name);
-  });
+  attachments.forEach((file) => body.append('attachment', file, file.name));
 
-  const response = await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
+  await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
     method: 'POST',
     body,
     keepalive: true,
   });
-  const text = await response.text();
-
-  if (/needs Activation/i.test(text)) {
-    throw new Error(
-      `Open ${INFO_EMAIL} (and spam), click FormSubmit “Activate Form”, then send the quote again.`,
-    );
-  }
 }
 
 /**
- * Instant UI success. Mail only to info@.
- * Photos are clickable via attached HTML + image.jpg files.
+ * Instant UI success. Email only to info@ (works in Gmail app).
+ * Prefers HTML email with blue tap links; falls back to FormSubmit + photo page URL.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -134,31 +111,59 @@ export async function sendQuoteEmail(
   const files = photoFiles.slice(0, 5);
 
   void (async () => {
-    let photos: File[] = [];
-    if (files.length) {
-      photos = await Promise.all(files.map((file) => compressPhoto(file)));
-    }
+    const photos = files.length ? await Promise.all(files.map((file) => compressPhoto(file))) : [];
+
+    const apiResponse = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        postcode,
+        service,
+        details,
+        photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+        viewUrl: '', // filled after links return — first call hosts photos
+      }),
+      keepalive: true,
+    }).catch(() => null);
 
     let links: string[] = [];
-    if (photos.length) {
-      try {
-        links = await hostPhotoLinks(photos);
-      } catch {
-        links = [];
-      }
+    let emailed = false;
+
+    if (apiResponse) {
+      const result = (await apiResponse.json().catch(() => null)) as {
+        ok?: boolean;
+        links?: string[];
+        emailed?: boolean;
+      } | null;
+      if (result?.ok && Array.isArray(result.links)) links = result.links.filter(Boolean);
+      emailed = Boolean(result?.emailed);
     }
+
+    const viewUrl = buildViewUrl(name, links);
+
+    // If API hosted photos but could not send HTML mail, send a second API attempt is skipped —
+    // FormSubmit fallback below includes the Gmail-friendly view URL.
+    if (emailed) return;
 
     const attachments: File[] = [];
     if (links.length) {
-      attachments.push(buildPhotosHtmlFile(name, links));
+      attachments.push(buildPhotosHtmlFile(name, links, viewUrl));
+      photos.forEach((photo, index) => {
+        attachments.push(
+          new File([photo], photos.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg', {
+            type: 'image/jpeg',
+          }),
+        );
+      });
     }
-    photos.forEach((photo, index) => {
-      attachments.push(
-        new File([photo], photos.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg', {
-          type: 'image/jpeg',
-        }),
-      );
-    });
+
+    // Put the website photo link in the subject — Gmail app often makes subject URLs tappable.
+    const subject = viewUrl
+      ? `New quote — ${name} (${postcode}) — Photos: ${viewUrl}`
+      : `New quote — ${name} (${postcode})`;
 
     const fields: Record<string, string> = {
       Name: name,
@@ -167,22 +172,25 @@ export async function sendQuoteEmail(
       Postcode: postcode,
       Service: service,
       Details: details,
-      Photos: attachments.length
-        ? 'Open attachment CLICK-TO-VIEW-PHOTOS.html (blue links) or image.jpg to see photos'
-        : 'No photos',
+      Open_photos_in_browser: viewUrl || 'No photos',
+      Photos: viewUrl
+        ? `Open this page to view photos: ${viewUrl}`
+        : photos.length
+          ? 'See attached image files'
+          : 'No photos',
       _replyto: email || INFO_EMAIL,
-      _subject: `New quote — ${name} (${postcode})`,
+      _subject: subject,
       _template: 'basic',
       _captcha: 'false',
-      _next: 'https://www.greatjunkremovalist.com.au/?quote=sent',
+      _next: `${SITE}/?quote=sent`,
     };
 
     try {
-      await sendToInfoOnly(fields, attachments);
+      await sendFormSubmitFallback(fields, attachments);
     } catch {
       window.setTimeout(() => {
-        void sendToInfoOnly(fields, attachments).catch(() => {});
-      }, 2500);
+        void sendFormSubmitFallback(fields, attachments).catch(() => {});
+      }, 2000);
     }
   })();
 }

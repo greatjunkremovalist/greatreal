@@ -13,6 +13,7 @@ import { Blog } from './pages/Blog';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Services } from './pages/Services';
 import { ServiceDetail } from './pages/ServiceDetail';
+import { ViewPhotos } from './pages/ViewPhotos';
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -92,6 +93,7 @@ export default function App() {
               path="/privacy-policy" 
               element={<PrivacyPolicy onOpenCall={() => setIsCallModalOpen(true)} />} 
             />
+            <Route path="/view-photos" element={<ViewPhotos />} />
           </Routes>
         </div>
 
