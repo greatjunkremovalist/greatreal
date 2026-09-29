@@ -69,6 +69,7 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
     const form = new FormData(e.currentTarget);
     setLoading(true);
     setError('');
+    const photos = photoFilesRef.current.slice();
     try {
       await sendQuoteEmail(
         {
@@ -81,8 +82,9 @@ export const QuoteSection: React.FC<QuoteSectionProps> = ({
           photos: [],
         },
         'Get a quote page',
-        photoFilesRef.current,
+        photos,
       );
+      photoFilesRef.current = [];
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');

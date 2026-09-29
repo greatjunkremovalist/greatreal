@@ -75,6 +75,7 @@ export const Hero: React.FC<HeroProps> = ({
     const form = new FormData(e.currentTarget);
     setLoading(true);
     setError('');
+    const photos = photoFilesRef.current.slice();
     try {
       await sendQuoteEmail(
         {
@@ -87,8 +88,9 @@ export const Hero: React.FC<HeroProps> = ({
           photos: [],
         },
         'Homepage quote form',
-        photoFilesRef.current,
+        photos,
       );
+      photoFilesRef.current = [];
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');

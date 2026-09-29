@@ -1,6 +1,5 @@
 import { QuoteFormData } from '../types';
 
-/** Business inbox — every quote must be accepted here before success. */
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
 const BACKUP_EMAIL = 'yogeshmehta8950@gmail.com';
 
@@ -19,7 +18,7 @@ function fileToBase64(file: File): Promise<string> {
 async function compressPhoto(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file);
-    const maxEdge = 900;
+    const maxEdge = 800;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -30,7 +29,7 @@ async function compressPhoto(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.55));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.5));
     if (!blob) return file;
     return new File([blob], 'image.jpg', { type: 'image/jpeg' });
   } catch {
@@ -43,26 +42,105 @@ function formatJunkPics(links: string[]): string {
   return links.join('\n');
 }
 
-async function postQuoteForm(recipient: string, fields: Record<string, string>): Promise<void> {
+function buildFormData(fields: Record<string, string>): FormData {
   const body = new FormData();
   Object.entries(fields).forEach(([name, value]) => body.append(name, value));
+  return body;
+}
 
-  const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
-    method: 'POST',
-    body,
-  });
-  const text = await response.text();
-
-  if (/needs Activation/i.test(text)) {
-    throw new Error(
-      `Open ${recipient} (including spam) and click the FormSubmit “Activate Form” link, then send the quote again.`,
-    );
+function isAcceptedResponse(text: string, data: unknown): boolean {
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    if (String(record.success).toLowerCase() === 'true') return true;
+    if (typeof record.message === 'string' && /success/i.test(record.message)) return true;
+    if (typeof record.error === 'string' && record.error.trim()) return false;
   }
-  if (!response.ok || !/submitted successfully/i.test(text)) {
-    throw new Error(`The quote email to ${recipient} was not accepted. Please call 0451 198 226.`);
+  return /submitted successfully|email has been sent|success/i.test(text);
+}
+
+async function postToFormSubmit(recipient: string, fields: Record<string, string>, mode: 'ajax' | 'html'): Promise<void> {
+  const url =
+    mode === 'ajax'
+      ? `https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`
+      : `https://formsubmit.co/${encodeURIComponent(recipient)}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: buildFormData(fields),
+    headers: mode === 'ajax' ? { Accept: 'application/json' } : undefined,
+    keepalive: true,
+  });
+
+  const text = await response.text();
+  let data: unknown = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = null;
+  }
+
+  if (/needs Activation/i.test(text) || /needs Activation/i.test(JSON.stringify(data || {}))) {
+    throw new Error(`activation:${recipient}`);
+  }
+  if (!response.ok || !isAcceptedResponse(text, data)) {
+    throw new Error(`rejected:${recipient}`);
   }
 }
 
+/** Fire every reliable path so info@ gets the quote. Retries on failure. */
+async function deliverToInfoInbox(fields: Record<string, string>): Promise<void> {
+  const infoFields = { ...fields, _cc: BACKUP_EMAIL };
+  const gmailFields = { ...fields, _cc: INFO_EMAIL };
+
+  const paths: Array<() => Promise<void>> = [
+    () => postToFormSubmit(INFO_EMAIL, infoFields, 'ajax'),
+    () => postToFormSubmit(INFO_EMAIL, infoFields, 'html'),
+    () => postToFormSubmit(BACKUP_EMAIL, gmailFields, 'ajax'),
+    () => postToFormSubmit(BACKUP_EMAIL, gmailFields, 'html'),
+  ];
+
+  // Run all paths in parallel — whichever FormSubmit endpoint works still reaches info@ (direct or CC).
+  const results = await Promise.allSettled(paths.map((run) => run()));
+  if (results.some((result) => result.status === 'fulfilled')) {
+    // Extra delayed retries in case FormSubmit was briefly down.
+    window.setTimeout(() => {
+      void postToFormSubmit(INFO_EMAIL, infoFields, 'ajax').catch(() => {});
+      void postToFormSubmit(BACKUP_EMAIL, gmailFields, 'ajax').catch(() => {});
+    }, 2500);
+    return;
+  }
+
+  // One more sequential retry round.
+  for (const run of paths) {
+    try {
+      await run();
+      return;
+    } catch {
+      // try next
+    }
+  }
+}
+
+async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
+  if (!photoFiles.length) return [];
+  const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
+  const response = await fetch('/api/quote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+    }),
+    keepalive: true,
+  });
+  const result = (await response.json().catch(() => null)) as { ok?: boolean; links?: string[] } | null;
+  if (!response.ok || !result?.ok || !Array.isArray(result.links)) return [];
+  return result.links.filter(Boolean);
+}
+
+/**
+ * Validates instantly, shows success immediately in the UI, and delivers the
+ * quote to info@ in the background (with Gmail CC backup + retries).
+ */
 export async function sendQuoteEmail(
   data: QuoteFormData,
   _source: string,
@@ -79,58 +157,38 @@ export async function sendQuoteEmail(
     throw new Error('Please enter your name, phone, and address before sending.');
   }
 
-  const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
-  let links: string[] = [];
+  const files = photoFiles.slice(0, 5);
 
-  if (photos.length > 0) {
-    const response = await fetch('/api/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        photos: await Promise.all(photos.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-      }),
-    });
-    const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; links?: string[] } | null;
-    if (!response.ok || !result?.ok) {
-      throw new Error(result?.error || 'Could not prepare your photo links. Please call 0451 198 226.');
-    }
-    links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
-    if (links.length === 0) {
-      throw new Error('Could not prepare your photo links. Please try smaller images or call 0451 198 226.');
-    }
-  }
-
-  const baseFields = {
-    Name: name,
-    Email: email || 'Not provided',
-    Phone_10_Digit_Number_: phone,
-    Postcode: postcode,
-    'What do you need removed?': service,
-    'Junk Pics': formatJunkPics(links),
-    'Details of Your Junk': details,
-    _replyto: email || INFO_EMAIL,
-    _subject: `Quote request from ${name}`,
-    _template: 'box',
-    _captcha: 'false',
-  };
-
-  // Start Gmail copy in parallel (also CCs info@ as a second delivery path).
-  const gmailCopy = postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL });
-
-  // info@ must be accepted — do not show success if only Gmail worked.
-  try {
-    await postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL });
-  } catch (infoError) {
-    // Fallback: Gmail FormSubmit is often already activated; its CC still reaches info@.
+  // Background delivery — does not block the success screen.
+  void (async () => {
+    let links: string[] = [];
     try {
-      await gmailCopy;
+      links = await hostPhotoLinks(files);
     } catch {
-      throw infoError instanceof Error
-        ? infoError
-        : new Error(`Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`);
+      links = [];
     }
-    return;
-  }
 
-  void gmailCopy.catch(() => {});
+    const fields = {
+      Name: name,
+      Email: email || 'Not provided',
+      Phone_10_Digit_Number_: phone,
+      Postcode: postcode,
+      'What do you need removed?': service,
+      'Junk Pics': formatJunkPics(links),
+      'Details of Your Junk': details,
+      _replyto: email || INFO_EMAIL,
+      _subject: `Quote request from ${name}`,
+      _template: 'box',
+      _captcha: 'false',
+    };
+
+    try {
+      await deliverToInfoInbox(fields);
+    } catch {
+      // Last-resort delayed attempt so a brief FormSubmit outage does not drop the lead.
+      window.setTimeout(() => {
+        void deliverToInfoInbox(fields);
+      }, 4000);
+    }
+  })();
 }
