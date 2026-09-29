@@ -91,9 +91,10 @@ export const Hero: React.FC<HeroProps> = ({
         photos,
       );
       photoFilesRef.current = [];
+      setFormData((prev) => ({ ...prev, photos: [] }));
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send your quote request. Please call 0451 198 226.');
+      setError(err instanceof Error ? err.message : 'Please enter your name, phone, and address.');
     } finally {
       setLoading(false);
     }

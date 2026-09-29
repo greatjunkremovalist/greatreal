@@ -1,7 +1,6 @@
 import { QuoteFormData } from '../types';
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
-const BACKUP_EMAIL = 'yogeshmehta8950@gmail.com';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -42,85 +41,6 @@ function formatJunkPics(links: string[]): string {
   return links.join('\n');
 }
 
-function buildFormData(fields: Record<string, string>): FormData {
-  const body = new FormData();
-  Object.entries(fields).forEach(([name, value]) => body.append(name, value));
-  return body;
-}
-
-function isAcceptedResponse(text: string, data: unknown): boolean {
-  if (data && typeof data === 'object') {
-    const record = data as Record<string, unknown>;
-    if (String(record.success).toLowerCase() === 'true') return true;
-    if (typeof record.message === 'string' && /success/i.test(record.message)) return true;
-    if (typeof record.error === 'string' && record.error.trim()) return false;
-  }
-  return /submitted successfully|email has been sent|success/i.test(text);
-}
-
-async function postToFormSubmit(recipient: string, fields: Record<string, string>, mode: 'ajax' | 'html'): Promise<void> {
-  const url =
-    mode === 'ajax'
-      ? `https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`
-      : `https://formsubmit.co/${encodeURIComponent(recipient)}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    body: buildFormData(fields),
-    headers: mode === 'ajax' ? { Accept: 'application/json' } : undefined,
-    keepalive: true,
-  });
-
-  const text = await response.text();
-  let data: unknown = null;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = null;
-  }
-
-  if (/needs Activation/i.test(text) || /needs Activation/i.test(JSON.stringify(data || {}))) {
-    throw new Error(`activation:${recipient}`);
-  }
-  if (!response.ok || !isAcceptedResponse(text, data)) {
-    throw new Error(`rejected:${recipient}`);
-  }
-}
-
-/** Fire every reliable path so info@ gets the quote. Retries on failure. */
-async function deliverToInfoInbox(fields: Record<string, string>): Promise<void> {
-  const infoFields = { ...fields, _cc: BACKUP_EMAIL };
-  const gmailFields = { ...fields, _cc: INFO_EMAIL };
-
-  const paths: Array<() => Promise<void>> = [
-    () => postToFormSubmit(INFO_EMAIL, infoFields, 'ajax'),
-    () => postToFormSubmit(INFO_EMAIL, infoFields, 'html'),
-    () => postToFormSubmit(BACKUP_EMAIL, gmailFields, 'ajax'),
-    () => postToFormSubmit(BACKUP_EMAIL, gmailFields, 'html'),
-  ];
-
-  // Run all paths in parallel — whichever FormSubmit endpoint works still reaches info@ (direct or CC).
-  const results = await Promise.allSettled(paths.map((run) => run()));
-  if (results.some((result) => result.status === 'fulfilled')) {
-    // Extra delayed retries in case FormSubmit was briefly down.
-    window.setTimeout(() => {
-      void postToFormSubmit(INFO_EMAIL, infoFields, 'ajax').catch(() => {});
-      void postToFormSubmit(BACKUP_EMAIL, gmailFields, 'ajax').catch(() => {});
-    }, 2500);
-    return;
-  }
-
-  // One more sequential retry round.
-  for (const run of paths) {
-    try {
-      await run();
-      return;
-    } catch {
-      // try next
-    }
-  }
-}
-
 async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   if (!photoFiles.length) return [];
   const photos = await Promise.all(photoFiles.slice(0, 5).map((file) => compressPhoto(file)));
@@ -137,9 +57,68 @@ async function hostPhotoLinks(photoFiles: File[]): Promise<string[]> {
   return result.links.filter(Boolean);
 }
 
+/** Native form POST in a hidden iframe — most reliable FormSubmit path. */
+function postViaHiddenForm(fields: Record<string, string>): void {
+  const iframeName = `gjr_fs_${Date.now()}`;
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'display:none;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `https://formsubmit.co/${INFO_EMAIL}`;
+  form.target = iframeName;
+  form.acceptCharset = 'UTF-8';
+  form.style.display = 'none';
+
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+
+  window.setTimeout(() => {
+    form.remove();
+    iframe.remove();
+  }, 15000);
+}
+
+async function postViaFetch(fields: Record<string, string>): Promise<void> {
+  const body = new FormData();
+  Object.entries(fields).forEach(([name, value]) => body.append(name, value));
+  await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(INFO_EMAIL)}`, {
+    method: 'POST',
+    body,
+    headers: { Accept: 'application/json' },
+    keepalive: true,
+  });
+}
+
+async function deliverToInfoOnly(fields: Record<string, string>): Promise<void> {
+  // Primary: real browser form POST (same method FormSubmit documents).
+  postViaHiddenForm(fields);
+  // Backup: ajax fetch in case the iframe path is blocked.
+  try {
+    await postViaFetch(fields);
+  } catch {
+    // Ignore — iframe submit already fired.
+  }
+  // One delayed retry for flaky FormSubmit responses.
+  window.setTimeout(() => {
+    postViaHiddenForm(fields);
+  }, 3000);
+}
+
 /**
- * Validates instantly, shows success immediately in the UI, and delivers the
- * quote to info@ in the background (with Gmail CC backup + retries).
+ * Validates instantly and returns immediately so the UI can show success.
+ * Delivers the quote only to info@greatjunkremovalist.com.au in the background.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -159,7 +138,6 @@ export async function sendQuoteEmail(
 
   const files = photoFiles.slice(0, 5);
 
-  // Background delivery — does not block the success screen.
   void (async () => {
     let links: string[] = [];
     try {
@@ -171,6 +149,7 @@ export async function sendQuoteEmail(
     const fields = {
       Name: name,
       Email: email || 'Not provided',
+      email: email || 'Not provided',
       Phone_10_Digit_Number_: phone,
       Postcode: postcode,
       'What do you need removed?': service,
@@ -180,14 +159,15 @@ export async function sendQuoteEmail(
       _subject: `Quote request from ${name}`,
       _template: 'box',
       _captcha: 'false',
+      _honey: '',
+      _next: typeof window !== 'undefined' ? `${window.location.origin}/?quote=sent` : 'https://www.greatjunkremovalist.com.au/?quote=sent',
     };
 
     try {
-      await deliverToInfoInbox(fields);
+      await deliverToInfoOnly(fields);
     } catch {
-      // Last-resort delayed attempt so a brief FormSubmit outage does not drop the lead.
       window.setTimeout(() => {
-        void deliverToInfoInbox(fields);
+        postViaHiddenForm(fields);
       }, 4000);
     }
   })();
