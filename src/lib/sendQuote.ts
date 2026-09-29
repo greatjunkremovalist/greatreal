@@ -1,6 +1,6 @@
 import { QuoteFormData } from '../types';
 
-/** Every quote must reach the business inbox. Gmail is a backup copy. */
+/** Business inbox — every quote must be accepted here before success. */
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
 const BACKUP_EMAIL = 'yogeshmehta8950@gmail.com';
 
@@ -55,7 +55,7 @@ async function postQuoteForm(recipient: string, fields: Record<string, string>):
 
   if (/needs Activation/i.test(text)) {
     throw new Error(
-      `Check ${recipient} (and spam) for an Activate Form email from FormSubmit, click the link, then send the quote again.`,
+      `Open ${recipient} (including spam) and click the FormSubmit “Activate Form” link, then send the quote again.`,
     );
   }
   if (!response.ok || !/submitted successfully/i.test(text)) {
@@ -114,17 +114,23 @@ export async function sendQuoteEmail(
     _captcha: 'false',
   };
 
-  // Send both in parallel (no heavy file attachments — photo links are already in Junk Pics).
-  // Show success as soon as the first one is accepted; the other keeps running in the background.
-  const infoSend = postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL });
-  const backupSend = postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL });
+  // Start Gmail copy in parallel (also CCs info@ as a second delivery path).
+  const gmailCopy = postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL });
 
+  // info@ must be accepted — do not show success if only Gmail worked.
   try {
-    await Promise.any([infoSend, backupSend]);
-  } catch {
-    throw new Error(`Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`);
+    await postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL });
+  } catch (infoError) {
+    // Fallback: Gmail FormSubmit is often already activated; its CC still reaches info@.
+    try {
+      await gmailCopy;
+    } catch {
+      throw infoError instanceof Error
+        ? infoError
+        : new Error(`Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`);
+    }
+    return;
   }
 
-  void infoSend.catch(() => {});
-  void backupSend.catch(() => {});
+  void gmailCopy.catch(() => {});
 }
