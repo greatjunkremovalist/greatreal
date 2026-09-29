@@ -1,6 +1,8 @@
 import { QuoteFormData } from '../types';
 
-const QUOTE_RECIPIENTS = ['info@greatjunkremovalist.com.au', 'yogeshmehta8950@gmail.com'];
+/** Every quote must reach the business inbox. Gmail is a backup copy. */
+const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
+const BACKUP_EMAIL = 'yogeshmehta8950@gmail.com';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -36,7 +38,6 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/** Tally-style Junk Pics: plain clickable URLs (FormSubmit cannot render HTML). */
 function formatJunkPics(links: string[]): string {
   if (!links.length) return 'No photos';
   return links.join('\n');
@@ -49,17 +50,21 @@ async function postQuoteForm(
 ): Promise<void> {
   const body = new FormData();
   Object.entries(fields).forEach(([name, value]) => body.append(name, value));
-  // Same as Tally: each photo arrives as a downloadable image.jpg file.
   photos.forEach((photo) => body.append('attachment', photo, 'image.jpg'));
 
   const response = await fetch(`https://formsubmit.co/${encodeURIComponent(recipient)}`, {
     method: 'POST',
     body,
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
   });
   const text = await response.text();
 
   if (/needs Activation/i.test(text)) {
-    throw new Error(`Check ${recipient} for an Activate Form email and click the link, then send the quote again.`);
+    throw new Error(
+      `Check ${recipient} (and spam) for an Activate Form email from FormSubmit, click the link, then send the quote again.`,
+    );
   }
   if (!response.ok || !/submitted successfully/i.test(text)) {
     throw new Error(`The quote email to ${recipient} was not accepted. Please call 0451 198 226.`);
@@ -103,8 +108,7 @@ export async function sendQuoteEmail(
     }
   }
 
-  // Exact Tally field names and order (no value_calc).
-  const fields = {
+  const baseFields = {
     Name: name,
     Email: email || 'Not provided',
     Phone_10_Digit_Number_: phone,
@@ -112,21 +116,35 @@ export async function sendQuoteEmail(
     'What do you need removed?': service,
     'Junk Pics': formatJunkPics(links),
     'Details of Your Junk': details,
-    _replyto: email || 'info@greatjunkremovalist.com.au',
+    _replyto: email || INFO_EMAIL,
     _subject: `Quote request from ${name}`,
     _template: 'box',
     _captcha: 'false',
   };
 
-  const results = await Promise.allSettled(
-    QUOTE_RECIPIENTS.map((recipient) => postQuoteForm(recipient, fields, photos)),
-  );
-  const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
-  if (failures.length > 0) {
+  let infoReached = false;
+  const errors: string[] = [];
+
+  // 1) Send directly to info@ (primary business inbox), CC the backup Gmail.
+  try {
+    await postQuoteForm(INFO_EMAIL, { ...baseFields, _cc: BACKUP_EMAIL }, photos);
+    infoReached = true;
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : `Could not send to ${INFO_EMAIL}.`);
+  }
+
+  // 2) Also send via Gmail and CC info@ so info still gets every quote if only Gmail is activated.
+  try {
+    await postQuoteForm(BACKUP_EMAIL, { ...baseFields, _cc: INFO_EMAIL }, photos);
+    infoReached = true;
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : `Could not send to ${BACKUP_EMAIL}.`);
+  }
+
+  if (!infoReached) {
     throw new Error(
-      failures
-        .map((failure) => (failure.reason instanceof Error ? failure.reason.message : 'Could not send the quote email.'))
-        .join(' '),
+      errors.join(' ') ||
+        `Could not send the quote to ${INFO_EMAIL}. Please call 0451 198 226.`,
     );
   }
 }
