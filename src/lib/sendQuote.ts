@@ -38,25 +38,23 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-function encodePhotoLinks(links: string[]): string {
-  return btoa(unescape(encodeURIComponent(JSON.stringify(links))))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+/**
+ * Prefer direct image.jpg host URLs (tmpfiles / litterbox / catbox).
+ * Those are what Gmail turns into blue tappable links — same as your screenshot.
+ */
+function preferClickablePhotoUrls(links: string[]): string[] {
+  const scored = links.filter((url) => /^https?:\/\//i.test(url));
+  const tmpfiles = scored.filter((url) => /tmpfiles\.org\/dl\//i.test(url) && /image\.jpg/i.test(url));
+  if (tmpfiles.length) return tmpfiles;
+  const directJpg = scored.filter((url) => /\/image\.jpg(\?|$)/i.test(url));
+  if (directJpg.length) return directJpg;
+  return scored;
 }
 
-function buildViewUrl(name: string, links: string[]): string {
-  if (!links.length) return '';
-  return `${SITE}/view-photos?n=${encodeURIComponent(name)}&d=${encodePhotoLinks(links)}`;
-}
-
-async function postToInfo(fields: Record<string, string>, images: File[] = []): Promise<boolean> {
+async function postToInfo(fields: Record<string, string>): Promise<boolean> {
   const body = new FormData();
   Object.entries(fields).forEach(([key, value]) => {
     if (value !== undefined && value !== null) body.append(key, String(value));
-  });
-  images.forEach((image, index) => {
-    body.append('attachment', image, images.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg');
   });
 
   try {
@@ -73,10 +71,9 @@ async function postToInfo(fields: Record<string, string>, images: File[] = []): 
 }
 
 /**
- * Final quote flow:
- * - UI success is instant
- * - Every quote goes ONLY to info@greatjunkremovalist.com.au
- * - Photos hosted + JPEG attachments + openable photo page
+ * Quote → info@ only.
+ * Photos as Junk_Pics = direct https://tmpfiles.org/dl/.../image.jpg lines
+ * (same blue clickable style as the working Gmail screenshot).
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -100,10 +97,6 @@ export async function sendQuoteEmail(
     const images = files.length ? await Promise.all(files.map((f) => compressPhoto(f))) : [];
 
     let links: string[] = [];
-    let viewUrl = '';
-    let shortViewUrl = '';
-    let shortLinks: string[] = [];
-    let emailedByApi = false;
 
     try {
       const response = await fetch('/api/quote', {
@@ -122,42 +115,29 @@ export async function sendQuoteEmail(
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         links?: string[];
-        viewUrl?: string;
-        shortViewUrl?: string;
-        shortLinks?: string[];
         emailed?: boolean;
       } | null;
 
       if (result?.ok) {
-        links = Array.isArray(result.links) ? result.links.filter(Boolean) : [];
-        viewUrl = result.viewUrl || buildViewUrl(name, links);
-        shortViewUrl = result.shortViewUrl || viewUrl;
-        shortLinks = Array.isArray(result.shortLinks) ? result.shortLinks.filter(Boolean) : links;
-        emailedByApi = Boolean(result.emailed);
+        links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
+        // Real HTML <a> mail already sent — done.
+        if (result.emailed) return;
       }
     } catch {
       // Fall through to FormSubmit.
     }
 
-    if (!viewUrl && links.length) {
-      viewUrl = buildViewUrl(name, links);
-    }
-    if (!shortViewUrl) shortViewUrl = viewUrl;
-    if (!shortLinks.length) shortLinks = links;
+    const junkPics = links.length ? links.join('\n') : images.length ? 'Photos could not be uploaded' : 'No photos';
 
-    // API HTML mail already delivered to info@ with blue photo buttons.
-    if (emailedByApi) return;
-
-    // Guaranteed browser delivery to info@ only (FormSubmit).
-    // Short URLs so Gmail app makes them blue/tappable (long ones stay plain text).
+    // Same shape as the working Gmail email: Junk_Pics with raw image.jpg URLs.
     const fields: Record<string, string> = {
       Name: name,
       Email: email || 'Not provided',
-      Phone: phone,
+      Phone_10_Digit_Number_: phone,
       Postcode: postcode,
-      Service: service,
+      'What_do_you_need_removed?': service,
       Details: details,
-      Open_photos: shortViewUrl || (images.length ? 'See attached image.jpg files' : 'No photos'),
+      Junk_Pics: junkPics,
       _replyto: email || INFO_EMAIL,
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
@@ -165,22 +145,10 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    shortLinks.forEach((url, index) => {
-      fields[`Photo_${index + 1}`] = url;
-    });
-
-    // First try: quote + JPEG attachments together.
-    let sent = await postToInfo(fields, images);
-
-    // If attachments caused a reject, still deliver the quote + photo page link.
-    if (!sent) {
-      sent = await postToInfo(fields, []);
-    }
-
-    // Last retry a few seconds later.
+    let sent = await postToInfo(fields);
     if (!sent) {
       window.setTimeout(() => {
-        void postToInfo(fields, images.length ? images : []).catch(() => {});
+        void postToInfo(fields).catch(() => {});
       }, 3000);
     }
   })();

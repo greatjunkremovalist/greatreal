@@ -42,23 +42,6 @@ function buildViewUrl(name, links) {
   return `${SITE}/view-photos?n=${encodeURIComponent(name || 'Customer')}&d=${encoded}`;
 }
 
-/** Short links so Gmail app auto-linkifies (it skips very long plain URLs). */
-async function shortenUrl(targetUrl) {
-  if (!targetUrl) return '';
-  try {
-    const response = await fetch(
-      `https://is.gd/create.php?format=json&url=${encodeURIComponent(targetUrl)}`,
-      { headers: HOST_HEADERS },
-    );
-    const data = await response.json().catch(() => null);
-    const short = String(data?.shorturl || '').trim();
-    if (short.startsWith('http')) return short;
-  } catch {
-    // Fall through.
-  }
-  return targetUrl;
-}
-
 async function hostOnLitterbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
@@ -101,17 +84,16 @@ async function hostOnCatbox(bytes) {
 }
 
 async function hostPhoto(bytes) {
-  try {
-    return await Promise.any(
-      [hostOnLitterbox, hostOnTmpfiles, hostOnCatbox].map(async (host) => {
-        const url = await host(bytes);
-        if (!url) throw new Error('empty');
-        return url;
-      }),
-    );
-  } catch {
-    return '';
+  // Prefer tmpfiles.org/dl/.../image.jpg — Gmail makes these blue/tappable (proven).
+  for (const host of [hostOnTmpfiles, hostOnLitterbox, hostOnCatbox]) {
+    try {
+      const url = await host(bytes);
+      if (url) return url;
+    } catch {
+      // try next host
+    }
   }
+  return '';
 }
 
 function buildHtmlEmail({ name, email, phone, postcode, service, details, links, viewUrl }) {
@@ -243,10 +225,6 @@ export default async function handler(req, res) {
     const service = String(payload.service || 'Not specified').trim();
     const details = String(payload.details || 'No description provided').trim();
     const viewUrl = buildViewUrl(name || 'Customer', links);
-    const shortViewUrl = viewUrl ? await shortenUrl(viewUrl) : '';
-    const shortLinks = links.length
-      ? await Promise.all(links.map((url) => shortenUrl(url)))
-      : [];
 
     let emailed = false;
     if (name && phone) {
@@ -259,7 +237,7 @@ export default async function handler(req, res) {
         service,
         details,
         links,
-        viewUrl: viewUrl || shortViewUrl,
+        viewUrl,
       });
       const text = [
         `Name: ${name}`,
@@ -268,7 +246,8 @@ export default async function handler(req, res) {
         `Postcode: ${postcode}`,
         `Service: ${service}`,
         `Details: ${details}`,
-        `Photos: ${shortViewUrl || viewUrl || links.join('\n') || 'No photos'}`,
+        `Junk_Pics:`,
+        ...(links.length ? links : ['No photos']),
       ].join('\n');
 
       try {
@@ -284,12 +263,11 @@ export default async function handler(req, res) {
       }
     }
 
+    // Always return raw host URLs (tmpfiles .../image.jpg) for FormSubmit Junk_Pics.
     sendJson(res, 200, {
       ok: true,
       links,
       viewUrl,
-      shortViewUrl: shortViewUrl || viewUrl,
-      shortLinks: shortLinks.length ? shortLinks : links,
       emailed,
     });
   } catch (error) {
