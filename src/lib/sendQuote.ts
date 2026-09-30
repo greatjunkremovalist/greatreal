@@ -93,14 +93,14 @@ async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
   return preferClickablePhotoUrls(links);
 }
 
-/** Classic form post. Fetch was failing, so the quote never left the browser. */
+/** Classic form post. Submit immediately — waiting for iframe load was skipping the send. */
 function postQuoteForm(recipient: string, fields: Record<string, string>): Promise<void> {
   return new Promise((resolve) => {
     const frameName = `gjr-quote-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const iframe = document.createElement('iframe');
     iframe.name = frameName;
     iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;';
+    iframe.style.cssText = 'position:absolute;width:1px;height:1px;border:0;left:-9999px;';
 
     const form = document.createElement('form');
     form.method = 'POST';
@@ -116,24 +116,15 @@ function postQuoteForm(recipient: string, fields: Record<string, string>): Promi
       form.appendChild(input);
     });
 
-    let submitted = false;
     const finish = () => {
       form.remove();
       iframe.remove();
       resolve();
     };
 
-    iframe.addEventListener('load', () => {
-      if (!submitted) {
-        submitted = true;
-        form.submit();
-        return;
-      }
-      window.setTimeout(finish, 400);
-    });
-
     document.body.append(iframe, form);
-    window.setTimeout(finish, 12000);
+    form.submit();
+    window.setTimeout(finish, 8000);
   });
 }
 
