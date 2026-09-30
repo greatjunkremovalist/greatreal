@@ -159,11 +159,15 @@ export async function sendQuoteEmail(
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         links?: string[];
+        emailed?: boolean;
       } | null;
 
       if (result?.ok) {
         links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
       }
+
+      // Titan already delivered this quote to info@. Do not also use FormSubmit.
+      if (result?.emailed) return;
     } catch {
       // Browser fallback below.
     }

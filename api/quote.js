@@ -1,8 +1,6 @@
 export const maxDuration = 60;
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
-/** Temporary copy — remove when no longer needed */
-const TEMP_CC_EMAIL = 'yogeshmehta8950@gmail.com';
 const SITE = 'https://www.greatjunkremovalist.com.au';
 const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 
@@ -131,7 +129,58 @@ function buildHtmlEmail({ name, email, phone, postcode, service, details, links,
 </body></html>`;
 }
 
-async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
+const APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbxkjIprus6k4UCzH2JuFRCPi7ZVny9U_GgFPlA2VsI9TxMH0iyeEOIgVI3RSN4dlMI7/exec';
+const APPS_SCRIPT_SECRET = 'gjr-quote-mail-7f3a9c2e';
+
+async function sendViaAppsScript({ subject, replyTo, name, email, phone, postcode, service, details, links }) {
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      secret: APPS_SCRIPT_SECRET,
+      name,
+      email,
+      phone,
+      postcode,
+      service,
+      details,
+      links,
+      subject,
+      replyTo,
+    }),
+  });
+
+  let resultResponse = response;
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location');
+    if (!location) return false;
+    resultResponse = await fetch(location);
+  }
+
+  const data = await resultResponse.json().catch(() => null);
+  return Boolean(data?.ok);
+}
+
+async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers, name, email, phone, postcode, service, details, links }) {
+  try {
+    const sent = await sendViaAppsScript({
+      subject,
+      replyTo,
+      name,
+      email,
+      phone,
+      postcode,
+      service,
+      details,
+      links,
+    });
+    if (sent) return true;
+  } catch {
+    // Fall through to Titan or Resend if those credentials exist.
+  }
+
   if (process.env.RESEND_API_KEY) {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -142,7 +191,6 @@ async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
       body: JSON.stringify({
         from: process.env.QUOTE_FROM_EMAIL || 'Great Junk Removalist <onboarding@resend.dev>',
         to: [INFO_EMAIL],
-        cc: [TEMP_CC_EMAIL],
         subject,
         html,
         text,
@@ -187,7 +235,6 @@ async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
     await transporter.sendMail({
       from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${user}>`,
       to: INFO_EMAIL,
-      cc: TEMP_CC_EMAIL,
       subject,
       html: htmlWithInline,
       text,
@@ -261,6 +308,13 @@ export default async function handler(req, res) {
           text,
           replyTo: email || INFO_EMAIL,
           photoBuffers: photos.map((photo) => photo.data),
+          name,
+          email,
+          phone,
+          postcode,
+          service,
+          details,
+          links,
         });
       } catch {
         emailed = false;
