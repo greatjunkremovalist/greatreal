@@ -38,14 +38,13 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/** Direct image.jpg URLs that Gmail turns blue (same as your working screenshot). */
+/** Keep links that stay online for at least 24 hours. Tmpfiles expires in about 1 hour. */
 function preferClickablePhotoUrls(links: string[]): string[] {
   const scored = links.filter((url) => /^https?:\/\//i.test(url));
-  const tmpfiles = scored.filter((url) => /tmpfiles\.org\/dl\//i.test(url) && /image\.jpg/i.test(url));
-  if (tmpfiles.length) return tmpfiles;
-  const directJpg = scored.filter((url) => /\/image\.jpg(\?|$)/i.test(url));
-  if (directJpg.length) return directJpg;
-  return scored;
+  const lasting = scored.filter((url) => /catbox\.moe/i.test(url));
+  if (lasting.length) return lasting;
+  const other = scored.filter((url) => !/tmpfiles\.org/i.test(url));
+  return other.length ? other : scored;
 }
 
 /** Browser-side tmpfiles upload — same host as the working Junk_Pics links. */
@@ -70,9 +69,25 @@ async function hostOnLitterboxClient(file: File): Promise<string> {
   try {
     const body = new FormData();
     body.append('reqtype', 'fileupload');
-    body.append('time', '24h');
+    body.append('time', '72h');
     body.append('fileToUpload', file, 'image.jpg');
     const response = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+      method: 'POST',
+      body,
+    });
+    const url = (await response.text()).trim();
+    return url.startsWith('http') ? url : '';
+  } catch {
+    return '';
+  }
+}
+
+async function hostOnCatboxClient(file: File): Promise<string> {
+  try {
+    const body = new FormData();
+    body.append('reqtype', 'fileupload');
+    body.append('fileToUpload', file, 'image.jpg');
+    const response = await fetch('https://catbox.moe/user/api.php', {
       method: 'POST',
       body,
     });
@@ -86,7 +101,10 @@ async function hostOnLitterboxClient(file: File): Promise<string> {
 async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
   const links: string[] = [];
   for (const image of images) {
-    const url = (await hostOnTmpfilesClient(image)) || (await hostOnLitterboxClient(image));
+    const url =
+      (await hostOnCatboxClient(image)) ||
+      (await hostOnLitterboxClient(image)) ||
+      (await hostOnTmpfilesClient(image));
     if (url) links.push(url);
   }
   return preferClickablePhotoUrls(links);

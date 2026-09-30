@@ -45,7 +45,7 @@ function buildViewUrl(name, links) {
 async function hostOnLitterbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
-  upload.append('time', '24h');
+  upload.append('time', '72h');
   upload.append('fileToUpload', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
   const response = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
     method: 'POST',
@@ -84,8 +84,8 @@ async function hostOnCatbox(bytes) {
 }
 
 async function hostPhoto(bytes) {
-  // Prefer tmpfiles.org/dl/.../image.jpg — Gmail makes these blue/tappable (proven).
-  for (const host of [hostOnTmpfiles, hostOnLitterbox, hostOnCatbox]) {
+  // Catbox keeps the file (no 1-hour expiry). Litterbox is 72 hours. Tmpfiles lasts about 1 hour.
+  for (const host of [hostOnCatbox, hostOnLitterbox, hostOnTmpfiles]) {
     try {
       const url = await host(bytes);
       if (url) return url;
