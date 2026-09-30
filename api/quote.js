@@ -217,6 +217,7 @@ async function sendViaFormSubmit({ name, email, phone, postcode, service, detail
     _captcha: 'false',
   };
 
+  const notes = [];
   let delivered = false;
   for (const to of [INFO_EMAIL, TEMP_CC_EMAIL]) {
     try {
@@ -231,12 +232,13 @@ async function sendViaFormSubmit({ name, email, phone, postcode, service, detail
         body: JSON.stringify(payload),
       });
       const text = await response.text();
+      notes.push(`${to} ${response.status} ${text.replace(/\s+/g, ' ').slice(0, 180)}`);
       if (/"success"\s*:\s*"?true"?/i.test(text)) delivered = true;
-    } catch {
-      // Try the next inbox.
+    } catch (error) {
+      notes.push(`${to} error ${error instanceof Error ? error.message : 'failed'}`);
     }
   }
-  return delivered;
+  return { delivered, notes };
 }
 
 export default async function handler(req, res) {
@@ -270,6 +272,7 @@ export default async function handler(req, res) {
     const viewUrl = buildViewUrl(name || 'Customer', links);
 
     let emailed = false;
+    let mailNote = '';
     if (name && phone) {
       const subject = `New quote — ${name} (${postcode || 'Melbourne'})`;
       const html = buildHtmlEmail({
@@ -307,9 +310,12 @@ export default async function handler(req, res) {
 
       if (!emailed) {
         try {
-          emailed = await sendViaFormSubmit({ name, email, phone, postcode, service, details, links });
-        } catch {
+          const formResult = await sendViaFormSubmit({ name, email, phone, postcode, service, details, links });
+          emailed = Boolean(formResult.delivered);
+          mailNote = (formResult.notes || []).join(' | ');
+        } catch (error) {
           emailed = false;
+          mailNote = error instanceof Error ? error.message : 'formsubmit failed';
         }
       }
     }
@@ -320,6 +326,7 @@ export default async function handler(req, res) {
       links,
       viewUrl,
       emailed,
+      mailNote,
     });
   } catch (error) {
     sendJson(res, 500, {
