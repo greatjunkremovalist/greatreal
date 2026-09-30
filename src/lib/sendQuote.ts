@@ -2,8 +2,7 @@ import { QuoteFormData } from '../types';
 
 /** Final destination for every quote */
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
-/** Temporary copy — remove when no longer needed */
-const TEMP_CC_EMAIL = 'yogeshmehta8950@gmail.com';
+const SITE = 'https://www.greatjunkremovalist.com.au';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -93,45 +92,32 @@ async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
   return preferClickablePhotoUrls(links);
 }
 
-/** Classic form post. Submit immediately — waiting for iframe load was skipping the send. */
-function postQuoteForm(recipient: string, fields: Record<string, string>): Promise<void> {
-  return new Promise((resolve) => {
-    const frameName = `gjr-quote-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const iframe = document.createElement('iframe');
-    iframe.name = frameName;
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.cssText = 'position:absolute;width:1px;height:1px;border:0;left:-9999px;';
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `https://formsubmit.co/${recipient}`;
-    form.target = frameName;
-    form.acceptCharset = 'UTF-8';
-
-    Object.entries(fields).forEach(([key, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = String(value);
-      form.appendChild(input);
-    });
-
-    const finish = () => {
-      form.remove();
-      iframe.remove();
-      resolve();
-    };
-
-    document.body.append(iframe, form);
-    form.submit();
-    window.setTimeout(finish, 8000);
+async function postToInfo(fields: Record<string, string>): Promise<boolean> {
+  const body = new FormData();
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) body.append(key, String(value));
   });
+
+  try {
+    const response = await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
+      method: 'POST',
+      body,
+    });
+    const text = await response.text();
+    if (/needs Activation/i.test(text)) return false;
+    if (response.status >= 500) return false;
+    return response.ok || /submitted successfully|thank you/i.test(text);
+  } catch {
+    return false;
+  }
 }
 
-async function deliverQuote(fields: Record<string, string>): Promise<void> {
-  // Separate sends. A CC on the info@ mail was stopping delivery entirely.
-  await postQuoteForm(INFO_EMAIL, fields);
-  await postQuoteForm(TEMP_CC_EMAIL, fields);
+async function deliverToInfo(fields: Record<string, string>): Promise<boolean> {
+  if (await postToInfo(fields)) return true;
+  await new Promise((r) => window.setTimeout(r, 1500));
+  if (await postToInfo(fields)) return true;
+  await new Promise((r) => window.setTimeout(r, 3000));
+  return postToInfo(fields);
 }
 
 /**
@@ -180,12 +166,10 @@ export async function sendQuoteEmail(
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         links?: string[];
-        emailed?: boolean;
       } | null;
 
       if (result?.ok) {
         links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
-        if (result.emailed) return;
       }
     } catch {
       // Browser fallback below.
@@ -211,8 +195,9 @@ export async function sendQuoteEmail(
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
       _captcha: 'false',
+      _next: `${SITE}/?quote=sent`,
     };
 
-    await deliverQuote(fields);
+    await deliverToInfo(fields);
   })();
 }
