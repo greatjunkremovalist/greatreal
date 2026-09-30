@@ -105,19 +105,12 @@ async function postToInfo(fields: Record<string, string>): Promise<boolean> {
     });
     const text = await response.text();
     if (/needs Activation/i.test(text)) return false;
+    if (response.status === 429 || /rate limit/i.test(text)) return false;
     if (response.status >= 500) return false;
     return response.ok || /submitted successfully|thank you/i.test(text);
   } catch {
     return false;
   }
-}
-
-async function deliverToInfo(fields: Record<string, string>): Promise<boolean> {
-  if (await postToInfo(fields)) return true;
-  await new Promise((r) => window.setTimeout(r, 1500));
-  if (await postToInfo(fields)) return true;
-  await new Promise((r) => window.setTimeout(r, 3000));
-  return postToInfo(fields);
 }
 
 /**
@@ -198,6 +191,6 @@ export async function sendQuoteEmail(
       _next: `${SITE}/?quote=sent`,
     };
 
-    await deliverToInfo(fields);
+    await postToInfo(fields);
   })();
 }
