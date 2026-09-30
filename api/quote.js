@@ -272,7 +272,6 @@ export default async function handler(req, res) {
     const viewUrl = buildViewUrl(name || 'Customer', links);
 
     let emailed = false;
-    let mailNote = '';
     if (name && phone) {
       const subject = `New quote — ${name} (${postcode || 'Melbourne'})`;
       const html = buildHtmlEmail({
@@ -312,10 +311,8 @@ export default async function handler(req, res) {
         try {
           const formResult = await sendViaFormSubmit({ name, email, phone, postcode, service, details, links });
           emailed = Boolean(formResult.delivered);
-          mailNote = (formResult.notes || []).join(' | ');
-        } catch (error) {
+        } catch {
           emailed = false;
-          mailNote = error instanceof Error ? error.message : 'formsubmit failed';
         }
       }
     }
@@ -326,7 +323,6 @@ export default async function handler(req, res) {
       links,
       viewUrl,
       emailed,
-      mailNote,
     });
   } catch (error) {
     sendJson(res, 500, {
