@@ -2,6 +2,8 @@ import { QuoteFormData } from '../types';
 
 /** Final destination for every quote */
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
+/** Temporary copy — remove when no longer needed */
+const TEMP_CC_EMAIL = 'yogeshmehta8950@gmail.com';
 const SITE = 'https://www.greatjunkremovalist.com.au';
 
 function fileToBase64(file: File): Promise<string> {
@@ -192,6 +194,7 @@ export async function sendQuoteEmail(
       Details: details,
       Junk_Pics: junkPics,
       _replyto: email || INFO_EMAIL,
+      _cc: TEMP_CC_EMAIL,
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
       _captcha: 'false',

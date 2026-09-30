@@ -1,6 +1,8 @@
 export const maxDuration = 60;
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
+/** Temporary copy — remove when no longer needed */
+const TEMP_CC_EMAIL = 'yogeshmehta8950@gmail.com';
 const SITE = 'https://www.greatjunkremovalist.com.au';
 const HOST_HEADERS = { 'User-Agent': 'Mozilla/5.0' };
 
@@ -140,6 +142,7 @@ async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
       body: JSON.stringify({
         from: process.env.QUOTE_FROM_EMAIL || 'Great Junk Removalist <onboarding@resend.dev>',
         to: [INFO_EMAIL],
+        cc: [TEMP_CC_EMAIL],
         subject,
         html,
         text,
@@ -184,6 +187,7 @@ async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
     await transporter.sendMail({
       from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${user}>`,
       to: INFO_EMAIL,
+      cc: TEMP_CC_EMAIL,
       subject,
       html: htmlWithInline,
       text,
