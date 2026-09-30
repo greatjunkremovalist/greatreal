@@ -104,7 +104,7 @@ function postQuoteForm(recipient: string, fields: Record<string, string>): Promi
 
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `https://formsubmit.co/${encodeURIComponent(recipient)}`;
+    form.action = `https://formsubmit.co/${recipient}`;
     form.target = frameName;
     form.acceptCharset = 'UTF-8';
 
@@ -189,10 +189,12 @@ export async function sendQuoteEmail(
       const result = (await response.json().catch(() => null)) as {
         ok?: boolean;
         links?: string[];
+        emailed?: boolean;
       } | null;
 
       if (result?.ok) {
         links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
+        if (result.emailed) return;
       }
     } catch {
       // Browser fallback below.

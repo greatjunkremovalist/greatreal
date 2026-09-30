@@ -200,6 +200,45 @@ async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
   return false;
 }
 
+async function sendViaFormSubmit({ name, email, phone, postcode, service, details, links }) {
+  const subject = `New quote — ${name} (${postcode || 'Melbourne'})`;
+  const payload = {
+    Name: name,
+    Email: email || 'Not provided',
+    email: email || INFO_EMAIL,
+    Phone_10_Digit_Number_: phone,
+    Postcode: postcode,
+    'What_do_you_need_removed?': service,
+    Details: details,
+    Junk_Pics: links.length ? links.join('\n') : 'No photos',
+    _replyto: email || INFO_EMAIL,
+    _subject: subject,
+    _template: 'basic',
+    _captcha: 'false',
+  };
+
+  let delivered = false;
+  for (const to of [INFO_EMAIL, TEMP_CC_EMAIL]) {
+    try {
+      const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Origin: SITE,
+          Referer: `${SITE}/`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const text = await response.text();
+      if (/"success"\s*:\s*"?true"?/i.test(text)) delivered = true;
+    } catch {
+      // Try the next inbox.
+    }
+  }
+  return delivered;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     sendJson(res, 405, { ok: false, error: 'Method not allowed' });
@@ -264,6 +303,14 @@ export default async function handler(req, res) {
         });
       } catch {
         emailed = false;
+      }
+
+      if (!emailed) {
+        try {
+          emailed = await sendViaFormSubmit({ name, email, phone, postcode, service, details, links });
+        } catch {
+          emailed = false;
+        }
       }
     }
 
