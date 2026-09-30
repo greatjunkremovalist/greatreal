@@ -4,7 +4,6 @@ import { QuoteFormData } from '../types';
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
 /** Temporary copy — remove when no longer needed */
 const TEMP_CC_EMAIL = 'yogeshmehta8950@gmail.com';
-const SITE = 'https://www.greatjunkremovalist.com.au';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -94,32 +93,54 @@ async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
   return preferClickablePhotoUrls(links);
 }
 
-async function postToInfo(fields: Record<string, string>): Promise<boolean> {
-  const body = new FormData();
-  Object.entries(fields).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) body.append(key, String(value));
-  });
+/** Classic form post. Fetch was failing, so the quote never left the browser. */
+function postQuoteForm(recipient: string, fields: Record<string, string>): Promise<void> {
+  return new Promise((resolve) => {
+    const frameName = `gjr-quote-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const iframe = document.createElement('iframe');
+    iframe.name = frameName;
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:absolute;width:0;height:0;border:0;';
 
-  try {
-    const response = await fetch(`https://formsubmit.co/${encodeURIComponent(INFO_EMAIL)}`, {
-      method: 'POST',
-      body,
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `https://formsubmit.co/${encodeURIComponent(recipient)}`;
+    form.target = frameName;
+    form.acceptCharset = 'UTF-8';
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = String(value);
+      form.appendChild(input);
     });
-    const text = await response.text();
-    if (/needs Activation/i.test(text)) return false;
-    if (response.status >= 500) return false;
-    return response.ok || /submitted successfully|thank you/i.test(text);
-  } catch {
-    return false;
-  }
+
+    let submitted = false;
+    const finish = () => {
+      form.remove();
+      iframe.remove();
+      resolve();
+    };
+
+    iframe.addEventListener('load', () => {
+      if (!submitted) {
+        submitted = true;
+        form.submit();
+        return;
+      }
+      window.setTimeout(finish, 400);
+    });
+
+    document.body.append(iframe, form);
+    window.setTimeout(finish, 12000);
+  });
 }
 
-async function deliverToInfo(fields: Record<string, string>): Promise<boolean> {
-  if (await postToInfo(fields)) return true;
-  await new Promise((r) => window.setTimeout(r, 1500));
-  if (await postToInfo(fields)) return true;
-  await new Promise((r) => window.setTimeout(r, 3000));
-  return postToInfo(fields);
+async function deliverQuote(fields: Record<string, string>): Promise<void> {
+  // Separate sends. A CC on the info@ mail was stopping delivery entirely.
+  await postQuoteForm(INFO_EMAIL, fields);
+  await postQuoteForm(TEMP_CC_EMAIL, fields);
 }
 
 /**
@@ -194,13 +215,11 @@ export async function sendQuoteEmail(
       Details: details,
       Junk_Pics: junkPics,
       _replyto: email || INFO_EMAIL,
-      _cc: TEMP_CC_EMAIL,
       _subject: `New quote — ${name} (${postcode})`,
       _template: 'basic',
       _captcha: 'false',
-      _next: `${SITE}/?quote=sent`,
     };
 
-    await deliverToInfo(fields);
+    await deliverQuote(fields);
   })();
 }
