@@ -279,18 +279,22 @@ export const CustomerStories: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center mt-5">
+        <div className="flex flex-wrap items-center justify-center mt-4 sm:mt-5">
           {visibleStories.map((s, idx) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setCurrentIndex(idx)}
               aria-pressed={currentIndex === idx}
-              className={`w-4 h-4 mx-2.5 rounded-full shadow-[0_0_3px_rgba(51,51,51,0.4)] transition-colors cursor-pointer ${
-                currentIndex === idx ? 'bg-[#222222]' : 'bg-[rgba(34,34,34,0.4)] hover:bg-[rgba(34,34,34,0.55)]'
-              }`}
+              className="mx-0.5 p-1 sm:mx-2.5 sm:p-0 cursor-pointer"
               aria-label={`Jump to review ${idx + 1}`}
-            />
+            >
+              <span
+                className={`block w-2 h-2 sm:w-4 sm:h-4 rounded-full shadow-[0_0_2px_rgba(51,51,51,0.35)] sm:shadow-[0_0_3px_rgba(51,51,51,0.4)] ${
+                  currentIndex === idx ? 'bg-[#222222]' : 'bg-[rgba(34,34,34,0.4)]'
+                }`}
+              />
+            </button>
           ))}
         </div>
       </div>
