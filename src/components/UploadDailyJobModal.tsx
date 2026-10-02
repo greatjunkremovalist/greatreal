@@ -5,7 +5,31 @@ import { JobShowcase } from '../types';
 interface UploadDailyJobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddJob: (newJob: JobShowcase) => void;
+  onAddJob: (newJob: JobShowcase) => Promise<void>;
+}
+
+async function fileToJpeg(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) throw new Error('Use a JPG or PNG photo.');
+  const maxEdge = 1200;
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Could not read that photo.');
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.72));
+  if (!blob) throw new Error('Could not read that photo.');
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read that photo.'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
@@ -21,27 +45,34 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
   const [beforeImage, setBeforeImage] = useState<string>('');
   const [afterImage, setAfterImage] = useState<string>('');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const beforeFileRef = useRef<HTMLInputElement>(null);
   const afterFileRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const readPhoto = async (file: File, type: 'before' | 'after') => {
+    setError('');
+    try {
+      const image = await fileToJpeg(file);
+      if (type === 'before') setBeforeImage(image);
+      else setAfterImage(image);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read that photo.');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'before' | 'after') => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.target.value = '';
+    if (file) void readPhoto(file, type);
+  };
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result) {
-        if (type === 'before') {
-          setBeforeImage(reader.result as string);
-        } else {
-          setAfterImage(reader.result as string);
-        }
-      }
-    };
-    reader.readAsDataURL(file);
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, type: 'before' | 'after') => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) void readPhoto(file, type);
   };
 
   const handleSampleFill = (service: string) => {
@@ -51,7 +82,7 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
     setDescription(`Completed same-day ${service.toLowerCase()} on schedule. Fully loaded and recycled.`);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!beforeImage || !afterImage) {
       setError('Please upload both a Before image and an After image.');
@@ -70,8 +101,16 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
       verified: true,
     };
 
-    onAddJob(newJob);
-    onClose();
+    setSaving(true);
+    setError('');
+    try {
+      await onAddJob(newJob);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'The photos could not be saved.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -121,6 +160,8 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
               />
               <div
                 onClick={() => beforeFileRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDrop(e, 'before')}
                 className={`relative h-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-3 cursor-pointer transition-all ${
                   beforeImage
                     ? 'border-[#84d800] bg-slate-50'
@@ -167,6 +208,8 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
               />
               <div
                 onClick={() => afterFileRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleDrop(e, 'after')}
                 className={`relative h-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-3 cursor-pointer transition-all ${
                   afterImage
                     ? 'border-[#84d800] bg-slate-50'
@@ -315,10 +358,11 @@ export const UploadDailyJobModal: React.FC<UploadDailyJobModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#84d800] hover:bg-[#77c900] text-[#091b2f] text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer"
+              disabled={saving}
+              className="px-5 py-2.5 bg-[#84d800] hover:bg-[#77c900] disabled:opacity-60 text-[#091b2f] text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>Publish to Showcase</span>
+              <span>{saving ? 'Publishing...' : 'Publish to Showcase'}</span>
             </button>
           </div>
         </form>

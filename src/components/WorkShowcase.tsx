@@ -7,32 +7,8 @@ import { UploadDailyJobModal } from './UploadDailyJobModal';
 import { GoogleReviewBadge } from './GoogleReviewBadge';
 import { APIProvider } from '@vis.gl/react-google-maps';
 
-const STORAGE_KEY = 'gjr_daily_jobs_v3';
-
 export const WorkShowcase: React.FC = () => {
-  const [jobs, setJobs] = useState<JobShowcase[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed: unknown = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Refresh built-in examples while retaining the user's uploaded jobs.
-          const builtInIds = new Set(INITIAL_JOBS.map((job) => job.id));
-          const uploadedJobs = parsed.filter(
-            (job): job is JobShowcase =>
-              job && typeof job.id === 'string' &&
-              typeof job.beforeImage === 'string' &&
-              typeof job.afterImage === 'string' &&
-              !builtInIds.has(job.id)
-          );
-          return [...uploadedJobs, ...INITIAL_JOBS];
-        }
-      }
-    } catch (e) {
-      console.warn('Unable to restore saved showcase jobs', e);
-    }
-    return INITIAL_JOBS;
-  });
+  const [jobs, setJobs] = useState<JobShowcase[]>(INITIAL_JOBS);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sliderPos, setSliderPos] = useState(50); // percentage for split-slider
@@ -41,12 +17,20 @@ export const WorkShowcase: React.FC = () => {
   const [viewMode, setViewMode] = useState<'side-by-side' | 'slider'>('side-by-side');
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
-    } catch (e) {
-      console.warn('Unable to save showcase jobs', e);
-    }
-  }, [jobs]);
+    let cancelled = false;
+    fetch('/api/jobs')
+      .then((response) => response.json())
+      .then((data: { ok?: boolean; jobs?: JobShowcase[] }) => {
+        if (cancelled || !data?.ok || !Array.isArray(data.jobs)) return;
+        setJobs([...data.jobs, ...INITIAL_JOBS]);
+      })
+      .catch(() => {
+        // Keep the built-in examples on screen if the saved jobs cannot be loaded.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const currentJob = jobs[currentIndex] || INITIAL_JOBS[0];
 
@@ -74,10 +58,19 @@ export const WorkShowcase: React.FC = () => {
     return () => window.clearInterval(timer);
   }, [jobs.length, isDragging, isHovered]);
 
-  const handleAddJob = (newJob: JobShowcase) => {
-    const updated = [newJob, ...jobs];
-    setJobs(updated);
+  const handleAddJob = async (newJob: JobShowcase) => {
+    const response = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newJob),
+    });
+    const data = (await response.json().catch(() => null)) as { ok?: boolean; job?: JobShowcase; error?: string } | null;
+    if (!response.ok || !data?.ok || !data.job?.beforeImage || !data.job?.afterImage) {
+      throw new Error(data?.error || 'The photos could not be saved.');
+    }
+    setJobs((prev) => [data.job as JobShowcase, ...prev.filter((job) => job.id !== data.job?.id)]);
     setCurrentIndex(0);
+    setSliderPos(50);
   };
 
   const handleSliderMove = (clientX: number, rect: DOMRect) => {

@@ -4,6 +4,7 @@ import path from 'path';
 import {defineConfig} from 'vite';
 import quoteHandler from './api/quote.js';
 import googleReviewsHandler from './api/google-reviews.js';
+import jobsHandler from './api/jobs.js';
 
 function quoteApiPlugin() {
   return {
@@ -14,6 +15,9 @@ function quoteApiPlugin() {
       });
       server.middlewares.use('/api/google-reviews', (req, res) => {
         googleReviewsHandler(req, res);
+      });
+      server.middlewares.use('/api/jobs', (req, res) => {
+        jobsHandler(req, res);
       });
     },
   };
