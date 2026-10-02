@@ -48,7 +48,8 @@ export default async function handler(req, res) {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-      sendJson(res, 200, emptyPayload(true));
+      const message = data?.error?.status || data?.error?.message || 'places_failed';
+      sendJson(res, 200, { ...emptyPayload(true), googleError: String(message).slice(0, 180) });
       return;
     }
 
