@@ -277,20 +277,21 @@ export const CustomerStories: React.FC = () => {
               })}
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center justify-center gap-2.5 mt-5">
-            {visibleStories.map((s, idx) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setCurrentIndex(idx)}
-                className={`rounded-full transition-all cursor-pointer ${
-                  currentIndex === idx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-slate-500 hover:bg-slate-400'
-                }`}
-                aria-label={`Jump to review ${idx + 1}`}
-              />
-            ))}
-          </div>
+        <div className="flex flex-wrap items-center justify-center mt-5">
+          {visibleStories.map((s, idx) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setCurrentIndex(idx)}
+              aria-pressed={currentIndex === idx}
+              className={`w-4 h-4 mx-2.5 rounded-full shadow-[0_0_3px_rgba(51,51,51,0.4)] transition-colors cursor-pointer ${
+                currentIndex === idx ? 'bg-[#222222]' : 'bg-[rgba(34,34,34,0.4)] hover:bg-[rgba(34,34,34,0.55)]'
+              }`}
+              aria-label={`Jump to review ${idx + 1}`}
+            />
+          ))}
         </div>
       </div>
 
