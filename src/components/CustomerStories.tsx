@@ -278,14 +278,14 @@ export const CustomerStories: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 mt-3.5">
+          <div className="flex items-center justify-center gap-2.5 mt-5">
             {visibleStories.map((s, idx) => (
               <button
                 key={s.id}
                 type="button"
                 onClick={() => setCurrentIndex(idx)}
-                className={`rounded-full transition-all ${
-                  currentIndex === idx ? 'w-2 h-2 bg-white' : 'w-1.5 h-1.5 bg-slate-600 hover:bg-slate-500'
+                className={`rounded-full transition-all cursor-pointer ${
+                  currentIndex === idx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-slate-500 hover:bg-slate-400'
                 }`}
                 aria-label={`Jump to review ${idx + 1}`}
               />
