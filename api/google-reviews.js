@@ -2,16 +2,23 @@ const PLACE_ID = 'ChIJz4dwVMJL1moRa3AgGtIom4s';
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=Great%20Junk%20Removalist&query_place_id=${PLACE_ID}`;
 const WRITE_REVIEW_URL = `https://search.google.com/local/writereview?placeid=${PLACE_ID}`;
 
-function sendJson(res, status, data) {
+const OK_TTL_MS = 6 * 60 * 60 * 1000;
+const FAIL_TTL_MS = 6 * 60 * 60 * 1000;
+let cachedPayload = null;
+let cachedAt = 0;
+let blockedUntil = 0;
+
+function sendJson(res, status, data, cacheSeconds = 300) {
   const body = JSON.stringify(data);
+  const cacheControl = `public, s-maxage=${cacheSeconds}, stale-while-revalidate=86400`;
   if (typeof res.status === 'function') {
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', cacheControl);
     res.status(status).json(data);
     return;
   }
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', cacheControl);
   res.end(body);
 }
 
@@ -33,6 +40,16 @@ export default async function handler(req, res) {
     return;
   }
 
+  if (cachedPayload && Date.now() - cachedAt < OK_TTL_MS) {
+    sendJson(res, 200, cachedPayload, 21600);
+    return;
+  }
+
+  if (Date.now() < blockedUntil) {
+    sendJson(res, 200, emptyPayload(true), 21600);
+    return;
+  }
+
   const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!key) {
     sendJson(res, 200, emptyPayload(false));
@@ -48,8 +65,8 @@ export default async function handler(req, res) {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-      const message = data?.error?.status || data?.error?.message || 'places_failed';
-      sendJson(res, 200, { ...emptyPayload(true), googleError: String(message).slice(0, 180) });
+      blockedUntil = Date.now() + FAIL_TTL_MS;
+      sendJson(res, 200, emptyPayload(true), 21600);
       return;
     }
 
@@ -64,7 +81,7 @@ export default async function handler(req, res) {
         timeAgo: review.relativePublishTimeDescription || '',
       }));
 
-    sendJson(res, 200, {
+    cachedPayload = {
       ok: true,
       configured: true,
       rating: typeof data?.rating === 'number' ? data.rating : null,
@@ -72,8 +89,11 @@ export default async function handler(req, res) {
       mapsUrl: data?.googleMapsUri || MAPS_URL,
       writeReviewUrl: WRITE_REVIEW_URL,
       reviews,
-    });
+    };
+    cachedAt = Date.now();
+    sendJson(res, 200, cachedPayload, 21600);
   } catch {
-    sendJson(res, 200, emptyPayload(true));
+    blockedUntil = Date.now() + FAIL_TTL_MS;
+    sendJson(res, 200, emptyPayload(true), 21600);
   }
 }
