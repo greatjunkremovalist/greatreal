@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/services/residential-rubbish-removal",
+      "destination": "/services/residential-rubbish-removal-in-melbourne",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]

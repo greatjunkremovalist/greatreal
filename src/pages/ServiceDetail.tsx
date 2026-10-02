@@ -22,6 +22,10 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  if (slug === 'residential-rubbish-removal') {
+    return <Navigate to="/services/residential-rubbish-removal-in-melbourne" replace />;
+  }
+
   const service = slug ? getServiceBySlug(slug) : undefined;
 
   if (!service) {

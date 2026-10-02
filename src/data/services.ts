@@ -19,7 +19,7 @@ export interface ServicePage {
 export const SERVICES: ServicePage[] = [
   {
     id: 'residential',
-    slug: 'residential-rubbish-removal',
+    slug: 'residential-rubbish-removal-in-melbourne',
     title: 'Residential Rubbish Removal',
     shortTitle: 'Residential',
     navLabel: 'Residential Rubbish Removal',
