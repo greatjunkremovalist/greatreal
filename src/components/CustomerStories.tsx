@@ -13,6 +13,14 @@ import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
+const REVIEW_DOT_GAP = 2;
+
+function reviewDotSize(distance: number) {
+  if (distance === 0) return 6;
+  if (distance === 1) return 4;
+  if (distance === 2) return 3;
+  return 2;
+}
 
 export const CustomerStories: React.FC = () => {
   const [stories, setStories] = useState<CustomerStory[]>([]);
@@ -281,12 +289,21 @@ export const CustomerStories: React.FC = () => {
           <div className="flex justify-center mt-3.5" aria-label="Reviews">
             <div className="w-[46px] h-[6px] overflow-hidden">
               <div
-                className="flex items-center gap-1 transition-transform duration-300 ease-out"
-                style={{ transform: `translateX(${20 - currentIndex * 10}px)` }}
+                className="flex items-center transition-transform duration-300 ease-out"
+                style={{
+                  gap: REVIEW_DOT_GAP,
+                  transform: `translateX(${
+                    23 -
+                    reviewDotSize(0) / 2 -
+                    visibleStories.slice(0, currentIndex).reduce(
+                      (sum, _, index) => sum + reviewDotSize(currentIndex - index) + REVIEW_DOT_GAP,
+                      0,
+                    )
+                  }px)`,
+                }}
               >
                 {visibleStories.map((story, idx) => {
-                  const distance = Math.abs(idx - currentIndex);
-                  const scale = distance === 0 ? 1 : distance === 1 ? 0.75 : distance === 2 ? 0.5 : 0.25;
+                  const size = reviewDotSize(Math.abs(idx - currentIndex));
                   return (
                     <button
                       key={story.id}
@@ -294,9 +311,10 @@ export const CustomerStories: React.FC = () => {
                       onClick={() => setCurrentIndex(idx)}
                       aria-current={idx === currentIndex ? 'true' : undefined}
                       aria-label={`Review ${idx + 1} of ${visibleStories.length}`}
-                      className="shrink-0 w-[6px] h-[6px] rounded-full transition-transform duration-300 ease-out cursor-pointer"
+                      className="shrink-0 rounded-full p-0 border-0 transition-all duration-300 ease-out cursor-pointer"
                       style={{
-                        transform: `scale(${scale})`,
+                        width: size,
+                        height: size,
                         backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
                       }}
                     />
