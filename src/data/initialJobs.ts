@@ -54,19 +54,6 @@ export const INITIAL_JOBS: JobShowcase[] = [
     illustrative: true,
   },
   {
-    id: 'job-5',
-    title: 'Construction Debris Removal',
-    serviceCategory: 'Construction Debris',
-    suburb: 'Illustrative example',
-    date: '',
-    beforeImage: '/images/reno-debris-before.jpg?v=ai-20260919',
-    afterImage: '/images/reno-debris-after.jpg?v=ai-20260919',
-    description:
-      'Renovation timber and plasterboard debris removed from a Melbourne driveway — trade-friendly construction rubbish clearance.',
-    verified: false,
-    illustrative: true,
-  },
-  {
     id: 'job-6',
     title: 'Commercial Office Clearance',
     serviceCategory: 'Commercial Junk',
