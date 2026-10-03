@@ -13,7 +13,6 @@ import { useGoogleReviews } from '../lib/useGoogleReviews';
 
 const STORAGE_KEY = 'gjr_customer_stories_v3';
 const AUTO_SLIDE_INTERVAL = 4500;
-const REVIEW_DOTS = 5;
 
 export const CustomerStories: React.FC = () => {
   const [stories, setStories] = useState<CustomerStory[]>([]);
@@ -55,18 +54,6 @@ export const CustomerStories: React.FC = () => {
       avatarUrl: review.authorPhoto,
     }));
   }, [google.reviews]);
-
-  const dotIndexes = useMemo(() => {
-    const count = Math.min(REVIEW_DOTS, visibleStories.length);
-    return Array.from({ length: count }, (_, index) =>
-      Math.round((index * visibleStories.length) / count),
-    );
-  }, [visibleStories.length]);
-
-  const activeDot = dotIndexes.reduce(
-    (active, start, index) => (currentIndex >= start ? index : active),
-    0,
-  );
 
   useEffect(() => {
     if (visibleStories.length <= 1 || isModalOpen) return;
@@ -291,24 +278,32 @@ export const CustomerStories: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 mt-3.5" role="tablist" aria-label="Review pages">
-            {dotIndexes.map((start, idx) => (
-              <button
-                key={start}
-                type="button"
-                role="tab"
-                onClick={() => setCurrentIndex(start)}
-                aria-selected={activeDot === idx}
-                className="p-1 cursor-pointer"
-                aria-label={`Review page ${idx + 1} of ${dotIndexes.length}`}
+          <div className="flex justify-center mt-3.5" aria-label="Reviews">
+            <div className="w-[46px] h-[6px] overflow-hidden">
+              <div
+                className="flex items-center gap-1 transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(${20 - currentIndex * 10}px)` }}
               >
-                <span
-                  className={`block rounded-full ${
-                    activeDot === idx ? 'w-[7px] h-[7px] bg-white' : 'w-[5px] h-[5px] bg-white/35'
-                  }`}
-                />
-              </button>
-            ))}
+                {visibleStories.map((story, idx) => {
+                  const distance = Math.abs(idx - currentIndex);
+                  const scale = distance === 0 ? 1 : distance === 1 ? 0.75 : distance === 2 ? 0.5 : 0.25;
+                  return (
+                    <button
+                      key={story.id}
+                      type="button"
+                      onClick={() => setCurrentIndex(idx)}
+                      aria-current={idx === currentIndex ? 'true' : undefined}
+                      aria-label={`Review ${idx + 1} of ${visibleStories.length}`}
+                      className="shrink-0 w-[6px] h-[6px] rounded-full transition-transform duration-300 ease-out cursor-pointer"
+                      style={{
+                        transform: `scale(${scale})`,
+                        backgroundColor: idx === currentIndex ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
