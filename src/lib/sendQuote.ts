@@ -133,8 +133,7 @@ async function postToInfo(fields: Record<string, string>): Promise<boolean> {
 
 /**
  * Quote → info@ only.
- * Always FormSubmit with Junk_Pics = https://tmpfiles.org/dl/.../image.jpg
- * (proven blue/clickable in Gmail).
+ * Wait until the website mailer confirms delivery before the form says it was sent.
  */
 export async function sendQuoteEmail(
   data: QuoteFormData,
@@ -153,66 +152,62 @@ export async function sendQuoteEmail(
   }
 
   const files = photoFiles.slice(0, 5);
+  const images = files.length ? await Promise.all(files.map((f) => compressPhoto(f))) : [];
 
-  void (async () => {
-    const images = files.length ? await Promise.all(files.map((f) => compressPhoto(f))) : [];
+  let links: string[] = [];
+  let emailed = false;
 
-    let links: string[] = [];
+  try {
+    const response = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        postcode,
+        service,
+        details,
+        photos: await Promise.all(images.map(async (photo) => ({ data: await fileToBase64(photo) }))),
+      }),
+    });
+    const result = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+      links?: string[];
+      emailed?: boolean;
+    } | null;
 
-    // 1) Server hosts photos (prefers tmpfiles).
-    try {
-      const response = await fetch('/api/quote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          postcode,
-          service,
-          details,
-          photos: await Promise.all(images.map(async (photo) => ({ data: await fileToBase64(photo) }))),
-        }),
-      });
-      const result = (await response.json().catch(() => null)) as {
-        ok?: boolean;
-        links?: string[];
-        emailed?: boolean;
-      } | null;
-
-      if (result?.ok) {
-        links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
-      }
-
-      // Titan already delivered this quote to info@. Do not also use FormSubmit.
-      if (result?.emailed) return;
-    } catch {
-      // Browser fallback below.
+    if (result?.ok) {
+      links = preferClickablePhotoUrls(Array.isArray(result.links) ? result.links.filter(Boolean) : []);
+      emailed = Boolean(result.emailed);
     }
+  } catch {
+    emailed = false;
+  }
 
-    // 2) If API gave no links, host from the browser (same tmpfiles URLs).
-    if (!links.length && images.length) {
-      links = await hostPhotosInBrowser(images);
-    }
+  if (emailed) return;
 
-    const junkPics = links.length ? links.join('\n') : 'No photos';
+  if (!links.length && images.length) {
+    links = await hostPhotosInBrowser(images);
+  }
 
-    // 3) Always deliver via FormSubmit — Junk_Pics with raw image.jpg links (clickable in Gmail).
-    const fields: Record<string, string> = {
-      Name: name,
-      Email: email || 'Not provided',
-      Phone_10_Digit_Number_: phone,
-      Postcode: postcode,
-      'What_do_you_need_removed?': service,
-      Details: details,
-      Junk_Pics: junkPics,
-      _replyto: email || INFO_EMAIL,
-      _subject: `New quote — ${name} (${postcode})`,
-      _template: 'basic',
-      _captcha: 'false',
-      _next: `${SITE}/?quote=sent`,
-    };
+  const junkPics = links.length ? links.join('\n') : 'No photos';
+  const sent = await postToInfo({
+    Name: name,
+    Email: email || 'Not provided',
+    Phone_10_Digit_Number_: phone,
+    Postcode: postcode,
+    'What_do_you_need_removed?': service,
+    Details: details,
+    Junk_Pics: junkPics,
+    _replyto: email || INFO_EMAIL,
+    _subject: `New quote — ${name} (${postcode})`,
+    _template: 'basic',
+    _captcha: 'false',
+    _next: `${SITE}/?quote=sent`,
+  });
 
-    await postToInfo(fields);
-  })();
+  if (!sent) {
+    throw new Error('The quote could not be emailed. Please call 0451 198 226.');
+  }
 }

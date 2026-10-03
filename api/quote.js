@@ -83,11 +83,19 @@ async function hostOnCatbox(bytes) {
   return url.startsWith('http') ? url : '';
 }
 
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(''), ms)),
+  ]);
+}
+
 async function hostPhoto(bytes) {
   // Catbox keeps the file (no 1-hour expiry). Litterbox is 72 hours. Tmpfiles lasts about 1 hour.
+  // Each host is capped so a slow upload cannot stop the quote email.
   for (const host of [hostOnCatbox, hostOnLitterbox, hostOnTmpfiles]) {
     try {
-      const url = await host(bytes);
+      const url = await withTimeout(host(bytes), 8000);
       if (url) return url;
     } catch {
       // try next host
