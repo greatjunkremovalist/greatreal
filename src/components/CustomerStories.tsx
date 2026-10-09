@@ -64,6 +64,14 @@ export const CustomerStories: React.FC = () => {
   }, [google.reviews]);
 
   useEffect(() => {
+    if (!visibleStories.length) {
+      setCurrentIndex(0);
+      return;
+    }
+    setCurrentIndex((prev) => prev % visibleStories.length);
+  }, [visibleStories.length]);
+
+  useEffect(() => {
     if (visibleStories.length <= 1 || isModalOpen) return;
     const supportsHover =
       typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches;
