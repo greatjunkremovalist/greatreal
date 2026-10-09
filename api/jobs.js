@@ -102,6 +102,11 @@ export default async function handler(req, res) {
     };
 
     await sql`
+      DELETE FROM daily_jobs
+      WHERE lower(service_category) = lower(${job.serviceCategory})
+    `;
+
+    await sql`
       INSERT INTO daily_jobs (
         id, title, service_category, suburb, job_date, before_image, after_image, description
       ) VALUES (

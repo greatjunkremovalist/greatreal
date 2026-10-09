@@ -7,6 +7,25 @@ import { UploadDailyJobModal } from './UploadDailyJobModal';
 import { GoogleReviewBadge } from './GoogleReviewBadge';
 import { APIProvider } from '@vis.gl/react-google-maps';
 
+function categoryKey(job: JobShowcase) {
+  return String(job.serviceCategory || '').trim().toLowerCase();
+}
+
+function showcaseJobs(uploaded: JobShowcase[], examples: JobShowcase[]) {
+  const latestByCategory: JobShowcase[] = [];
+  const uploadedCategories = new Set<string>();
+  for (const job of uploaded) {
+    const key = categoryKey(job);
+    if (!key || uploadedCategories.has(key)) continue;
+    uploadedCategories.add(key);
+    latestByCategory.push(job);
+  }
+  return [
+    ...latestByCategory,
+    ...examples.filter((job) => !uploadedCategories.has(categoryKey(job))),
+  ];
+}
+
 export const WorkShowcase: React.FC = () => {
   const [jobs, setJobs] = useState<JobShowcase[]>(INITIAL_JOBS);
 
@@ -22,7 +41,7 @@ export const WorkShowcase: React.FC = () => {
       .then((response) => response.json())
       .then((data: { ok?: boolean; jobs?: JobShowcase[] }) => {
         if (cancelled || !data?.ok || !Array.isArray(data.jobs)) return;
-        setJobs([...data.jobs, ...INITIAL_JOBS]);
+        setJobs(showcaseJobs(data.jobs, INITIAL_JOBS));
       })
       .catch(() => {
         // Keep the built-in examples on screen if the saved jobs cannot be loaded.
@@ -68,7 +87,12 @@ export const WorkShowcase: React.FC = () => {
     if (!response.ok || !data?.ok || !data.job?.beforeImage || !data.job?.afterImage) {
       throw new Error(data?.error || 'The photos could not be saved.');
     }
-    setJobs((prev) => [data.job as JobShowcase, ...prev.filter((job) => job.id !== data.job?.id)]);
+    setJobs((prev) =>
+      showcaseJobs(
+        [data.job as JobShowcase, ...prev.filter((job) => !job.illustrative)],
+        INITIAL_JOBS,
+      ),
+    );
     setCurrentIndex(0);
     setSliderPos(50);
   };
