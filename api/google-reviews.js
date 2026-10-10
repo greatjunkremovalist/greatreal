@@ -41,15 +41,99 @@ function mergeReviews(live) {
   const kept = PUBLISHED_GOOGLE_REVIEWS.reviews.filter(
     (review) => !liveNames.has(review.authorName.toLowerCase()),
   );
+  const reviews = [...liveReviews, ...kept];
   return {
     ok: true,
     configured: true,
     rating: typeof live?.rating === 'number' ? live.rating : PUBLISHED_GOOGLE_REVIEWS.rating,
-    count: Number(live?.count) || PUBLISHED_GOOGLE_REVIEWS.count,
+    count: Math.max(Number(live?.count) || 0, PUBLISHED_GOOGLE_REVIEWS.count, reviews.length),
     mapsUrl: live?.mapsUrl || MAPS_URL,
     writeReviewUrl: WRITE_REVIEW_URL,
-    reviews: [...liveReviews, ...kept],
+    reviews,
   };
+}
+
+const MAPS_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+  Accept: '*/*',
+  Referer: 'https://www.google.com/maps',
+  'Accept-Language': 'en-AU,en;q=0.9',
+};
+
+function parseJsonp(text) {
+  try {
+    return JSON.parse(String(text || '').replace(/^\)\]\}'\s*/, ''));
+  } catch {
+    return null;
+  }
+}
+
+function collectMapsReviews(node, acc = [], seen = new Set()) {
+  if (!Array.isArray(node)) return acc;
+  const author = node[1]?.[4]?.[5]?.[0];
+  const photo = node[1]?.[4]?.[5]?.[1];
+  const authorUrl = node[1]?.[4]?.[5]?.[2]?.[0] || node[1]?.[4]?.[2]?.[0];
+  const timeAgo = node[1]?.[6];
+  const rating = Number(node[2]?.[0]?.[0]);
+  const text = node[2]?.[15]?.[0]?.[0];
+  if (
+    typeof author === 'string' &&
+    author.length > 1 &&
+    typeof text === 'string' &&
+    text.length > 1 &&
+    Number.isFinite(rating)
+  ) {
+    const key = author.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      acc.push({
+        id: typeof node[0] === 'string' ? node[0] : `maps-${key.replace(/\s+/g, '-')}`,
+        authorName: author,
+        authorPhoto: typeof photo === 'string' ? photo : '',
+        authorUrl: typeof authorUrl === 'string' ? authorUrl : MAPS_URL,
+        rating,
+        text,
+        timeAgo: typeof timeAgo === 'string' ? timeAgo : '',
+      });
+    }
+  }
+  for (const child of node) collectMapsReviews(child, acc, seen);
+  return acc;
+}
+
+async function fetchMapsLive() {
+  const pb =
+    '!1m14!1s0x6ad64bc2547087cf:0x8b9b28d21a20706b!3m12!1m3!1d13905.740951080403!2d145.0980477!3d-37.6413141!2m3!1f0.0!2f0.0!3f0.0!3m2!1i1024!2i768!4f13.1!12m4!2m3!1i360!2i120!4i8!15m108!72m22!8m10!1m6!4m1!1e1!4m1!1e3!4m1!1e4!3sother_user_google_review_posts__and__hotel_and_vr_partner_review_posts';
+  const urls = [
+    `https://www.google.com/maps/preview/place?authuser=0&hl=en&gl=au&pb=${encodeURIComponent(pb)}`,
+    `https://www.google.com/maps/place/?q=place_id:${PLACE_ID}&hl=en`,
+  ];
+  for (const url of urls) {
+    const response = await fetch(url, { headers: MAPS_HEADERS });
+    if (!response.ok) continue;
+    const text = await response.text();
+    let data = parseJsonp(text);
+    if (!data) {
+      const match = text.match(/APP_INITIALIZATION_STATE\s*=\s*(\[[\s\S]*?\]);window\./);
+      if (match) {
+        try {
+          data = JSON.parse(match[1]);
+        } catch {
+          data = null;
+        }
+      }
+    }
+    const reviews = data ? collectMapsReviews(data) : [];
+    if (!reviews.length) continue;
+    return {
+      rating: 5,
+      count: Math.max(reviews.length, PUBLISHED_GOOGLE_REVIEWS.count),
+      mapsUrl: MAPS_URL,
+      reviews,
+    };
+  }
+  return null;
 }
 
 async function ensureTable(sql) {
@@ -183,18 +267,18 @@ export default async function handler(req, res) {
     }
   }
 
-  const hasLiveReviews = Boolean(live && live.reviews && live.reviews.length);
-  let payload = hasLiveReviews ? mergeReviews(live) : null;
-
-  if (hasLiveReviews) {
-    await storeReviews(sql, payload);
-  } else {
-    payload = await readStoredReviews(sql);
-    if (!payload) {
-      payload = mergeReviews(null);
-      await storeReviews(sql, payload);
+  if (!live?.reviews?.length) {
+    try {
+      live = (await fetchMapsLive()) || live;
+    } catch {
+      // Keep Places/cache results if the Maps listing cannot be read.
     }
   }
+
+  const hasLiveReviews = Boolean(live && live.reviews && live.reviews.length);
+  const stored = hasLiveReviews ? null : await readStoredReviews(sql);
+  const payload = mergeReviews(hasLiveReviews ? live : stored);
+  await storeReviews(sql, payload);
 
   cachedPayload = payload;
   cachedAt = Date.now();
