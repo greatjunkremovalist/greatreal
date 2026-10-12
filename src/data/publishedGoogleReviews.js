@@ -6,10 +6,20 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
   ok: true,
   configured: true,
   rating: 5,
-  count: 15,
+  count: 16,
   mapsUrl: GOOGLE_MAPS_URL,
   writeReviewUrl: GOOGLE_WRITE_REVIEW_URL,
   reviews: [
+    {
+      id: 'google-harpreet-singh',
+      authorName: 'harpreet singh',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocIUYlmCIsKiUjMK7SqsaMaK5dhkZpZLzv85Yg-QhwOaZSikOg=s120-c-rp-mo-br100',
+      authorUrl: 'https://www.google.com/maps/contrib/117131716597137641454/reviews',
+      rating: 5,
+      text: '',
+      timeAgo: 'a day ago',
+    },
     {
       id: 'google-sahil-dagar',
       authorName: 'Sahil Dagar',
@@ -18,7 +28,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/106680394693265157618/reviews',
       rating: 5,
       text: 'Great service highly recommend. I had a great experience with great junk removalist.',
-      timeAgo: '5 hours ago',
+      timeAgo: '2 days ago',
     },
     {
       id: 'google-emily-green',
@@ -28,7 +38,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/104801980189987304900/reviews',
       rating: 5,
       text: 'Lovely team, did a great job. Highly recommend',
-      timeAgo: '3 days ago',
+      timeAgo: '5 days ago',
     },
     {
       id: 'google-rahul-khatri',
@@ -38,7 +48,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/111828565301860489534/reviews',
       rating: 5,
       text: 'I had a great experience with great junk removalist. I highly recommend the team. The crew is very friendly and they provide a same day junk removal service very affordable.',
-      timeAgo: '3 days ago',
+      timeAgo: '5 days ago',
     },
     {
       id: 'google-himanshu-khanna',
