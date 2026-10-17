@@ -38,31 +38,11 @@ async function compressPhoto(file: File): Promise<File> {
   }
 }
 
-/** Keep links that stay online for at least 24 hours. Tmpfiles expires in about 1 hour. */
+/** Keep links that stay online for at least 24 hours. Drop tmpfiles (expires in about 1 hour). */
 function preferClickablePhotoUrls(links: string[]): string[] {
-  const scored = links.filter((url) => /^https?:\/\//i.test(url));
-  const lasting = scored.filter((url) => /catbox\.moe/i.test(url));
-  if (lasting.length) return lasting;
-  const other = scored.filter((url) => !/tmpfiles\.org/i.test(url));
-  return other.length ? other : scored;
-}
-
-/** Browser-side tmpfiles upload — same host as the working Junk_Pics links. */
-async function hostOnTmpfilesClient(file: File): Promise<string> {
-  try {
-    const body = new FormData();
-    body.append('file', file, 'image.jpg');
-    const response = await fetch('https://tmpfiles.org/api/v1/upload', {
-      method: 'POST',
-      body,
-    });
-    const data = (await response.json().catch(() => null)) as { data?: { url?: string } } | null;
-    const page = String(data?.data?.url || '');
-    if (!page.startsWith('http')) return '';
-    return page.replace('://tmpfiles.org/', '://tmpfiles.org/dl/');
-  } catch {
-    return '';
-  }
+  const scored = links.filter((url) => /^https?:\/\//i.test(url) && !/tmpfiles\.org/i.test(url));
+  const lasting = scored.filter((url) => /greatjunkremovalist\.com\.au\/api\/quote-photo/i.test(url) || /catbox\.moe/i.test(url));
+  return lasting.length ? lasting : scored;
 }
 
 async function hostOnLitterboxClient(file: File): Promise<string> {
@@ -101,10 +81,7 @@ async function hostOnCatboxClient(file: File): Promise<string> {
 async function hostPhotosInBrowser(images: File[]): Promise<string[]> {
   const links: string[] = [];
   for (const image of images) {
-    const url =
-      (await hostOnCatboxClient(image)) ||
-      (await hostOnLitterboxClient(image)) ||
-      (await hostOnTmpfilesClient(image));
+    const url = (await hostOnLitterboxClient(image)) || (await hostOnCatboxClient(image));
     if (url) links.push(url);
   }
   return preferClickablePhotoUrls(links);

@@ -1,3 +1,5 @@
+import { storeQuotePhoto } from './quote-photo.js';
+
 export const maxDuration = 60;
 
 const INFO_EMAIL = 'info@greatjunkremovalist.com.au';
@@ -56,20 +58,6 @@ async function hostOnLitterbox(bytes) {
   return url.startsWith('http') ? url : '';
 }
 
-async function hostOnTmpfiles(bytes) {
-  const upload = new FormData();
-  upload.append('file', new Blob([bytes], { type: 'image/jpeg' }), 'image.jpg');
-  const response = await fetch('https://tmpfiles.org/api/v1/upload', {
-    method: 'POST',
-    headers: HOST_HEADERS,
-    body: upload,
-  });
-  const data = await response.json().catch(() => null);
-  const page = String(data?.data?.url || '');
-  if (!page.startsWith('http')) return '';
-  return page.replace('://tmpfiles.org/', '://tmpfiles.org/dl/');
-}
-
 async function hostOnCatbox(bytes) {
   const upload = new FormData();
   upload.append('reqtype', 'fileupload');
@@ -91,9 +79,13 @@ function withTimeout(promise, ms) {
 }
 
 async function hostPhoto(bytes) {
-  // Catbox keeps the file (no 1-hour expiry). Litterbox is 72 hours. Tmpfiles lasts about 1 hour.
-  // Each host is capped so a slow upload cannot stop the quote email.
-  for (const host of [hostOnCatbox, hostOnLitterbox, hostOnTmpfiles]) {
+  try {
+    const lasting = await storeQuotePhoto(bytes);
+    if (lasting) return lasting;
+  } catch {
+    // Fall through to 72-hour public hosts if the database cannot save the file.
+  }
+  for (const host of [hostOnLitterbox, hostOnCatbox]) {
     try {
       const url = await withTimeout(host(bytes), 8000);
       if (url) return url;
@@ -329,7 +321,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Always return raw host URLs (tmpfiles .../image.jpg) for FormSubmit Junk_Pics.
+    // Return lasting photo URLs for the email (site links, not 1-hour temp files).
     sendJson(res, 200, {
       ok: true,
       links,
