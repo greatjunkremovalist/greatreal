@@ -6,10 +6,60 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
   ok: true,
   configured: true,
   rating: 5,
-  count: 16,
+  count: 20,
   mapsUrl: GOOGLE_MAPS_URL,
   writeReviewUrl: GOOGLE_WRITE_REVIEW_URL,
   reviews: [
+    {
+      id: 'google-alex',
+      authorName: 'Alex',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjUV19zangL3TyC3ySK5pA2xRzpDScuSGWS_xNyZPVmhwt89v9o_=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Excellent work, quick call out and very reasonable costs.',
+      timeAgo: '16 hours ago',
+    },
+    {
+      id: 'google-michael-fernandes',
+      authorName: 'Michael Fernandes',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjUs0PnHBVVlDX2YhHsKs6POMHG77MD-wKhgL6nZUrHHsam8lHg=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Easy pick up and great price',
+      timeAgo: '16 hours ago',
+    },
+    {
+      id: 'google-nana-bsr',
+      authorName: 'Nana Bsr',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjX0icbQwwFfkJHYFOAFjFYoj3aSax-zNhf40I5IYsLrCR53SOG5=s120-c-rp-mo-ba12-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Vishu and Abhi were amazing, they did a great job . Their service is highly recommended. They are the best for this job. They did amazing in the hot weather with very difficult and heavy junks.',
+      timeAgo: '17 hours ago',
+    },
+    {
+      id: 'google-phoebe-trisha-lebumfacil',
+      authorName: 'Phoebe Trisha Lebumfacil',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjXrnKRKoB13I186h3CVTRcMnkYp9cjUBxCihUslo5w14CLHG9Qp=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Good service! Highly recommended!',
+      timeAgo: '20 hours ago',
+    },
+    {
+      id: 'google-marina-kostovski',
+      authorName: 'Marina Kostovski',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjVLH_mr98B8kzQ5iLxWqZK2Ev4QVo4ixmtyHkGJQyRmogAds_jj=s120-c-rp-mo-ba12-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Fantastic service! They did a great job removing my old mattress from my property. The whole process was smooth and hassle-free, and I really appreciated receiving photos as proof that the job had been completed. It’s great to deal with a company that is reliable, keeps you informed, and does exactly what they say they will do.\nHighly recommend their service! 👍☺️',
+      timeAgo: '21 hours ago',
+    },
     {
       id: 'google-harpreet-singh',
       authorName: 'harpreet singh',
@@ -18,7 +68,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/117131716597137641454/reviews',
       rating: 5,
       text: '',
-      timeAgo: 'a day ago',
+      timeAgo: 'a week ago',
     },
     {
       id: 'google-sahil-dagar',
@@ -28,7 +78,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/106680394693265157618/reviews',
       rating: 5,
       text: 'Great service highly recommend. I had a great experience with great junk removalist.',
-      timeAgo: '2 days ago',
+      timeAgo: 'a week ago',
     },
     {
       id: 'google-emily-green',
@@ -38,7 +88,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/104801980189987304900/reviews',
       rating: 5,
       text: 'Lovely team, did a great job. Highly recommend',
-      timeAgo: '5 days ago',
+      timeAgo: 'a week ago',
     },
     {
       id: 'google-rahul-khatri',
@@ -48,7 +98,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: 'https://www.google.com/maps/contrib/111828565301860489534/reviews',
       rating: 5,
       text: 'I had a great experience with great junk removalist. I highly recommend the team. The crew is very friendly and they provide a same day junk removal service very affordable.',
-      timeAgo: '5 days ago',
+      timeAgo: 'a week ago',
     },
     {
       id: 'google-himanshu-khanna',
