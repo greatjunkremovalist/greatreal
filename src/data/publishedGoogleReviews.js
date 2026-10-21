@@ -6,10 +6,40 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
   ok: true,
   configured: true,
   rating: 5,
-  count: 20,
+  count: 23,
   mapsUrl: GOOGLE_MAPS_URL,
   writeReviewUrl: GOOGLE_WRITE_REVIEW_URL,
   reviews: [
+    {
+      id: 'google-michelle-xiao',
+      authorName: 'Michelle Xiao',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocL6dM3fDPQev4PXPtGRwbKcMGMLwmuPwcufrAqYct6d2KpDPQ=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Great service and price',
+      timeAgo: 'a day ago',
+    },
+    {
+      id: 'google-sheeba-the-rescue-dogs-channel',
+      authorName: "Sheeba The Rescue Dog's Channel",
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a-/ALV-UjVVVgOMkIXzSkWl87Zh-bq1zu6iLb_bbL6O3Xi_WxNcqPK_0pUcmw=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Very friendly and made quick work of my junk pile. Would recommend you give them a go 👍',
+      timeAgo: '2 days ago',
+    },
+    {
+      id: 'google-vainenooroa-tarai',
+      authorName: 'Vainenooroa Tarai',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocL1_9Ykqrdn-t_5JbOeMYK4xi0FGzvnqoIkJ1PmeFVyBUxmUQ=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Excellent service\nDone job in time\nTeam works\nHigh recommended to service',
+      timeAgo: '2 days ago',
+    },
     {
       id: 'google-alex',
       authorName: 'Alex',
@@ -18,7 +48,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Excellent work, quick call out and very reasonable costs.',
-      timeAgo: '16 hours ago',
+      timeAgo: '3 days ago',
     },
     {
       id: 'google-michael-fernandes',
@@ -28,7 +58,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Easy pick up and great price',
-      timeAgo: '16 hours ago',
+      timeAgo: '3 days ago',
     },
     {
       id: 'google-nana-bsr',
@@ -38,7 +68,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Vishu and Abhi were amazing, they did a great job . Their service is highly recommended. They are the best for this job. They did amazing in the hot weather with very difficult and heavy junks.',
-      timeAgo: '17 hours ago',
+      timeAgo: '3 days ago',
     },
     {
       id: 'google-phoebe-trisha-lebumfacil',
@@ -48,7 +78,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Good service! Highly recommended!',
-      timeAgo: '20 hours ago',
+      timeAgo: '3 days ago',
     },
     {
       id: 'google-marina-kostovski',
@@ -58,7 +88,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Fantastic service! They did a great job removing my old mattress from my property. The whole process was smooth and hassle-free, and I really appreciated receiving photos as proof that the job had been completed. It’s great to deal with a company that is reliable, keeps you informed, and does exactly what they say they will do.\nHighly recommend their service! 👍☺️',
-      timeAgo: '21 hours ago',
+      timeAgo: '3 days ago',
     },
     {
       id: 'google-harpreet-singh',
