@@ -93,18 +93,28 @@ export const Footer: React.FC = () => {
                 info@greatjunkremovalist.com.au
               </a>
             </p>
+            <p className="text-slate-200">
+              <a
+                href="https://maps.app.goo.gl/AAQVdBognRGBHrte7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-[#74cb00] transition-colors"
+              >
+                25 Highview Dr, South Morang VIC 3752
+              </a>
+            </p>
             
             <div className="w-full h-40 bg-slate-800 rounded-md overflow-hidden mt-4 mb-6">
-              {/* Google Maps Embed for Melbourne */}
+              {/* Google Maps Embed — Great Junk Removalist, South Morang */}
               <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1008681.4395874457!2d144.316886!3d-37.971237!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad646b5d2ba4df7%3A0x4045675218ccd90!2sMelbourne%20VIC%2C%20Australia!5e0!3m2!1sen!2sus!4v1714545931215!5m2!1sen!2sus" 
+                src="https://www.google.com/maps?q=Great+Junk+Removalist,+25+Highview+Dr,+South+Morang+VIC+3752&output=embed" 
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
                 allowFullScreen={false} 
                 loading="lazy" 
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Service Area Map"
+                title="Great Junk Removalist location map"
               ></iframe>
             </div>
 
