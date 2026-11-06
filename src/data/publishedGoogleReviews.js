@@ -6,10 +6,40 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
   ok: true,
   configured: true,
   rating: 5,
-  count: 23,
+  count: 25,
   mapsUrl: GOOGLE_MAPS_URL,
   writeReviewUrl: GOOGLE_WRITE_REVIEW_URL,
   reviews: [
+    {
+      id: 'google-l-t',
+      authorName: 'L. T.',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocIXwDfEXWOmBgsCzNK3_uOrm8Aq4oLetFNOEOWCuwmIKKBwSw=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'These guys arrived on time, and removed 7 metres of garden waste from my Plenty address.\nGreat job, and left the property clean.\nPrice was good, and both of the workers were very polite.\nWould recommend them to others, and I will use them again.',
+      timeAgo: '3 days ago',
+    },
+    {
+      id: 'google-miodrag-parezanovic',
+      authorName: 'Miodrag Parezanovic',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocL6oXgWspDc-FIpfuxjC1OCHXL6rf5j9Ywut0G1-dPVJ6zzwA=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Good service. Very affordable. Highly recommended.',
+      timeAgo: '4 days ago',
+    },
+    {
+      id: 'google-lynette-fletcher',
+      authorName: 'LYNETTE FLETCHER',
+      authorPhoto:
+        'https://lh3.googleusercontent.com/a/ACg8ocJIjKKMxa3Wu07UVA5czcIVMe3jlPSv4vDZlebbOzmuoEGs2w=s120-c-rp-mo-br100',
+      authorUrl: GOOGLE_MAPS_URL,
+      rating: 5,
+      text: 'Thank you for the good service with my wondow frame . I was very pleased with the service',
+      timeAgo: '2 weeks ago',
+    },
     {
       id: 'google-michelle-xiao',
       authorName: 'Michelle Xiao',
@@ -18,7 +48,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Great service and price',
-      timeAgo: 'a day ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-sheeba-the-rescue-dogs-channel',
@@ -28,7 +58,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Very friendly and made quick work of my junk pile. Would recommend you give them a go 👍',
-      timeAgo: '2 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-vainenooroa-tarai',
@@ -38,7 +68,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Excellent service\nDone job in time\nTeam works\nHigh recommended to service',
-      timeAgo: '2 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-alex',
@@ -48,7 +78,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Excellent work, quick call out and very reasonable costs.',
-      timeAgo: '3 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-michael-fernandes',
@@ -58,7 +88,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Easy pick up and great price',
-      timeAgo: '3 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-nana-bsr',
@@ -68,7 +98,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Vishu and Abhi were amazing, they did a great job . Their service is highly recommended. They are the best for this job. They did amazing in the hot weather with very difficult and heavy junks.',
-      timeAgo: '3 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-phoebe-trisha-lebumfacil',
@@ -78,7 +108,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Good service! Highly recommended!',
-      timeAgo: '3 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-marina-kostovski',
@@ -88,7 +118,7 @@ export const PUBLISHED_GOOGLE_REVIEWS = {
       authorUrl: GOOGLE_MAPS_URL,
       rating: 5,
       text: 'Fantastic service! They did a great job removing my old mattress from my property. The whole process was smooth and hassle-free, and I really appreciated receiving photos as proof that the job had been completed. It’s great to deal with a company that is reliable, keeps you informed, and does exactly what they say they will do.\nHighly recommend their service! 👍☺️',
-      timeAgo: '3 days ago',
+      timeAgo: '2 weeks ago',
     },
     {
       id: 'google-harpreet-singh',
