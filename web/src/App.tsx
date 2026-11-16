@@ -10,6 +10,7 @@ import { WhyGjr } from './pages/WhyGjr';
 import { Faq } from './pages/Faq';
 import { GetQuote } from './pages/GetQuote';
 import { Blog } from './pages/Blog';
+import { BlogPost } from './pages/BlogPost';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Services } from './pages/Services';
 import { ServiceDetail } from './pages/ServiceDetail';
@@ -88,6 +89,10 @@ export default function App() {
             <Route 
               path="/blog" 
               element={<Blog onOpenCall={() => setIsCallModalOpen(true)} />} 
+            />
+            <Route
+              path="/blog/:slug"
+              element={<BlogPost onOpenCall={() => setIsCallModalOpen(true)} />}
             />
             <Route 
               path="/privacy-policy" 

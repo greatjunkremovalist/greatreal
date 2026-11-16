@@ -1,8 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { CtaBanner } from '../components/CtaBanner';
 import { SeoHead } from '../components/SeoHead';
+import { fetchSanity } from '../lib/sanity/fetch';
+import { urlFor } from '../lib/sanity/image';
+import { POSTS_QUERY } from '../lib/sanity/queries';
 
 const blogPosts = [
   {
@@ -51,8 +54,52 @@ interface BlogProps {
   onOpenCall: () => void;
 }
 
+type SanityPostCard = {
+  _id: string
+  title: string
+  slug?: {current?: string}
+  excerpt?: string
+  category?: string
+  publishedAt?: string
+  image?: {alt?: string}
+}
+
 export const Blog: React.FC<BlogProps> = ({ onOpenCall }) => {
   const navigate = useNavigate();
+  const [sanityPosts, setSanityPosts] = useState<SanityPostCard[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchSanity<SanityPostCard[]>(POSTS_QUERY).then((data) => {
+      if (!cancelled) setSanityPosts(data && data.length > 0 ? data : null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const cards =
+    sanityPosts?.map((post) => ({
+      id: post._id,
+      title: post.title,
+      excerpt: post.excerpt || '',
+      date: post.publishedAt
+        ? new Date(post.publishedAt).toLocaleDateString('en-AU', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })
+        : '',
+      category: post.category || 'Blog',
+      image: post.image ? urlFor(post.image as never).width(1200).url() : '',
+      imageAlt: (post.image as {alt?: string} | undefined)?.alt || post.title,
+      href: post.slug?.current ? `/blog/${post.slug.current}` : '/blog',
+    })) ??
+    blogPosts.map((post) => ({
+      ...post,
+      id: String(post.id),
+      href: '/blog',
+    }))
 
   return (
     <>
@@ -78,10 +125,10 @@ export const Blog: React.FC<BlogProps> = ({ onOpenCall }) => {
       <div className="bg-slate-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {blogPosts.map((post) => (
+            {cards.map((post) => (
               <article
                 key={post.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300"
+                className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col group hover:shadow-lg transition-all duration-300"
               >
                 <div className="relative h-64 overflow-hidden">
                   <div className="absolute top-4 left-4 z-10 bg-[#84d800] text-[#091b2f] text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">
@@ -106,9 +153,12 @@ export const Blog: React.FC<BlogProps> = ({ onOpenCall }) => {
                   <p className="text-slate-800 mb-8 line-clamp-3 leading-relaxed">{post.excerpt}</p>
 
                   <div className="mt-auto">
-                    <span className="inline-flex items-center font-bold text-[#091b2f] text-sm group-hover:text-[#74cb00] transition-colors">
+                    <Link
+                      to={post.href}
+                      className="inline-flex items-center font-bold text-[#091b2f] text-sm group-hover:text-[#74cb00] transition-colors"
+                    >
                       Read article <ArrowRight className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" />
-                    </span>
+                    </Link>
                   </div>
                 </div>
               </article>

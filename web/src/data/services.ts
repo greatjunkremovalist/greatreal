@@ -273,9 +273,9 @@ export const SERVICES: ServicePage[] = [
     title: 'Piano Removal',
     shortTitle: 'Piano Removal',
     navLabel: 'Piano Removal',
-    image: '/images/services-original/piano.webp?v=ai-20260919',
+    image: '/images/services-original/piano.jpg?v=wa-20261114',
     gallery: [
-      '/images/services-original/piano.webp?v=ai-20260919',
+      '/images/services-original/piano.jpg?v=wa-20261114',
       '/images/services-original/residential.webp?v=fridge-pile-20260919',
       '/images/lounge-junk-before.jpg?v=sofa-pile-20260919',
       '/images/hero-truck-loading.jpg?v=ai-20260919',

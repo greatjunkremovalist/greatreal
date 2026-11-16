@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { TrustRibbon } from '../components/TrustRibbon';
 import { CtaBanner } from '../components/CtaBanner';
 import { SeoHead } from '../components/SeoHead';
 import { useNavigate } from 'react-router-dom';
 import { FAQS } from '../data/faqs';
+import { fetchSanity } from '../lib/sanity/fetch';
+import { FAQS_QUERY } from '../lib/sanity/queries';
 
 interface FaqProps {
   onOpenCall: () => void;
@@ -13,6 +15,19 @@ interface FaqProps {
 export const Faq: React.FC<FaqProps> = ({ onOpenCall }) => {
   const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [items, setItems] = useState(FAQS)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchSanity<{_id: string; question: string; answer: string}[]>(FAQS_QUERY).then((data) => {
+      if (!cancelled && data && data.length > 0) {
+        setItems(data)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <>
@@ -34,7 +49,7 @@ export const Faq: React.FC<FaqProps> = ({ onOpenCall }) => {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="space-y-4">
-          {FAQS.map((faq, index) => {
+          {items.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
               <div
