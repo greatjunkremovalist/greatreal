@@ -149,8 +149,10 @@ export const Hero: React.FC<HeroProps> = ({
                   Hassle-free low cost junk removal.
                 </p>
                 <p>Committed to zero to landfill.</p>
-                <p className="leading-[1.55]">
-                  All residential &amp; commercial rubbish removed in Melbourne VIC &amp; surrounding areas.
+                <p className="leading-[1.4] text-[clamp(1.05rem,3.7vw,1.65rem)] max-w-[22rem] sm:max-w-none mx-auto lg:mx-0">
+                  All residential &amp; commercial rubbish removed in
+                  <br />
+                  Melbourne VIC &amp; surrounding areas.
                 </p>
               </div>
               <p
@@ -170,35 +172,35 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="relative bg-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] border border-white/30 overflow-hidden">
               <div className="h-1.5 w-full bg-gradient-to-r from-[#84d800] via-[#6bb500] to-[#032b4c]" />
 
-              <div className="px-6 sm:px-8 pt-6 sm:pt-7 pb-5 border-b border-slate-100 bg-gradient-to-b from-[#f7faf5] to-white">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#559400]">
+              <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-slate-100 bg-gradient-to-b from-[#f7faf5] to-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#559400]">
                       No obligation
                     </p>
-                    <h2 className="text-xl sm:text-2xl font-black text-[#091b2f] tracking-tight">
+                    <h2 className="text-lg sm:text-xl font-black text-[#091b2f] tracking-tight">
                       Get my free quote
                     </h2>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 leading-snug">
                       Tell us what to clear — we reply with a clear price.
                     </p>
                   </div>
-                  <div className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#eaf8dd] border border-[#c5e89a]">
+                  <div className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#eaf8dd] border border-[#c5e89a]">
                     <Clock className="w-3.5 h-3.5 text-[#428400]" />
-                    <span className="text-[11px] font-extrabold text-[#3d6c00] whitespace-nowrap">
+                    <span className="text-[10px] font-extrabold text-[#3d6c00] whitespace-nowrap">
                       ~1 min
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 sm:px-8 py-6 sm:py-7">
+              <div className="px-4 sm:px-5 py-4">
                 {submitted ? (
-                  <div className="py-10 text-center space-y-4">
-                    <div className="w-16 h-16 bg-[#eaf8dd] text-[#559400] rounded-full mx-auto flex items-center justify-center ring-8 ring-[#f4f9ef]">
-                      <CheckCircle2 className="w-9 h-9" />
+                  <div className="py-8 text-center space-y-3">
+                    <div className="w-14 h-14 bg-[#eaf8dd] text-[#559400] rounded-full mx-auto flex items-center justify-center ring-8 ring-[#f4f9ef]">
+                      <CheckCircle2 className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-black text-[#091b2f]">Quote request received</h3>
+                    <h3 className="text-lg font-black text-[#091b2f]">Quote request received</h3>
                     <p className="text-slate-600 text-sm max-w-sm mx-auto leading-relaxed">
                       Thanks <span className="font-semibold text-slate-800">{formData.fullName || 'there'}</span>!
                       We&apos;ll call <span className="font-semibold text-slate-800">{formData.phone}</span> shortly
@@ -207,20 +209,20 @@ export const Hero: React.FC<HeroProps> = ({
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="mt-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
+                      className="mt-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-colors"
                     >
                       Submit another request
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-5" id="hero-quote-form">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-name">
+                  <form onSubmit={handleSubmit} className="space-y-3" id="hero-quote-form">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-name">
                           Full name
                         </label>
                         <div className="relative">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-name"
                             name="fullName"
@@ -229,16 +231,16 @@ export const Hero: React.FC<HeroProps> = ({
                             value={formData.fullName}
                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                             placeholder="Jane Smith"
-                            className="w-full pl-11 pr-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
+                            className="w-full pl-10 pr-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-phone">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-phone">
                           Phone number
                         </label>
                         <div className="relative">
-                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-phone"
                             name="phone"
@@ -247,19 +249,19 @@ export const Hero: React.FC<HeroProps> = ({
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="04XX XXX XXX"
-                            className="w-full pl-11 pr-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
+                            className="w-full pl-10 pr-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
                           />
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-email">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-email">
                           Email <span className="normal-case tracking-normal font-medium text-slate-400">(optional)</span>
                         </label>
                         <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-email"
                             name="email"
@@ -267,16 +269,16 @@ export const Hero: React.FC<HeroProps> = ({
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             placeholder="you@email.com"
-                            className="w-full pl-11 pr-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
+                            className="w-full pl-10 pr-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-suburb">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-suburb">
                           Suburb / postcode
                         </label>
                         <div className="relative">
-                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
                             id="hero-suburb"
                             name="suburb"
@@ -285,14 +287,14 @@ export const Hero: React.FC<HeroProps> = ({
                             value={formData.suburb}
                             onChange={(e) => setFormData({ ...formData, suburb: e.target.value })}
                             placeholder="Richmond, 3121"
-                            className="w-full pl-11 pr-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
+                            className="w-full pl-10 pr-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
                           />
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-service">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-service">
                         Service <span className="normal-case tracking-normal font-medium text-slate-400">(optional)</span>
                       </label>
                       <select
@@ -303,12 +305,12 @@ export const Hero: React.FC<HeroProps> = ({
                           setFormData({ ...formData, service: e.target.value });
                           onServiceSelect?.(e.target.value);
                         }}
-                        className="w-full px-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all cursor-pointer appearance-none"
+                        className="w-full px-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all cursor-pointer appearance-none"
                         style={{
                           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E")`,
                           backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 1rem center',
-                          paddingRight: '2.75rem',
+                          backgroundPosition: 'right 0.85rem center',
+                          paddingRight: '2.5rem',
                         }}
                       >
                         <option value="">Select a service</option>
@@ -325,22 +327,22 @@ export const Hero: React.FC<HeroProps> = ({
                       </select>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-desc">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="hero-desc">
                         What would you like removed? <span className="normal-case tracking-normal font-medium text-slate-400">(optional)</span>
                       </label>
-                      <textarea
+                      <input
                         id="hero-desc"
                         name="description"
-                        rows={3}
+                        type="text"
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="e.g. Old sofa, mattress, garage clutter"
-                        className="w-full min-h-[96px] px-4 py-3.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all resize-y"
+                        className="w-full px-3 py-2.5 bg-[#f8fafc] hover:bg-white border border-slate-200 rounded-xl text-sm text-[#091b2f] placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#84d800]/50 focus:border-[#84d800] transition-all"
                       />
                     </div>
 
-                    <div className="space-y-3 pt-1">
+                    <div className="space-y-2">
                       <input
                         type="file"
                         ref={fileInputRef}
@@ -353,22 +355,22 @@ export const Hero: React.FC<HeroProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-4 sm:py-5 px-5 bg-[#eaf8dd] hover:bg-[#dff3c8] border-2 border-[#84d800] rounded-xl text-[#2f5a00] font-bold text-sm sm:text-base flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 transition-all shadow-[0_4px_14px_-4px_rgba(132,216,0,0.45)] ring-2 ring-[#84d800]/25"
+                        className="w-full py-3 px-4 bg-[#eaf8dd] hover:bg-[#dff3c8] border-2 border-[#84d800] rounded-xl text-[#2f5a00] font-bold text-sm flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 transition-all"
                       >
                         <span className="inline-flex items-center gap-2">
-                          <Camera className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.25]" />
+                          <Camera className="w-5 h-5 stroke-[2.25]" />
                           Add photos of your junk
                         </span>
-                        <span className="text-[#4d7a12] font-semibold text-xs sm:text-sm">
+                        <span className="text-[#4d7a12] font-semibold text-xs">
                           Helps us quote faster · Optional
                         </span>
                       </button>
                       {formData.photos.length > 0 && (
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-2">
                           {formData.photos.map((photoUrl, idx) => (
                             <div
                               key={idx}
-                              className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-[#84d800] shadow-md ring-2 ring-[#84d800]/20"
+                              className="relative w-14 h-14 rounded-lg overflow-hidden border-2 border-[#84d800] shadow-md"
                             >
                               <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                               <button
@@ -388,7 +390,7 @@ export const Hero: React.FC<HeroProps> = ({
                     <button
                       type="submit"
                       disabled={loading}
-                      className="group w-full flex items-center justify-center gap-2 py-4 px-5 bg-[#84d800] hover:bg-[#76c700] active:scale-[0.99] text-[#091a2e] font-black text-sm sm:text-base rounded-xl shadow-[0_8px_20px_-4px_rgba(132,216,0,0.55)] hover:shadow-[0_10px_24px_-4px_rgba(132,216,0,0.65)] transition-all disabled:opacity-75"
+                      className="group w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#84d800] hover:bg-[#76c700] active:scale-[0.99] text-[#091a2e] font-black text-sm rounded-xl shadow-[0_8px_20px_-4px_rgba(132,216,0,0.55)] transition-all disabled:opacity-75"
                     >
                       {loading ? (
                         'Sending your request...'
@@ -405,7 +407,7 @@ export const Hero: React.FC<HeroProps> = ({
                         {error}
                       </p>
                     )}
-                    <p className="text-center text-slate-500 text-xs leading-relaxed pt-1">
+                    <p className="text-center text-slate-500 text-[11px] leading-snug">
                       No spam. Local Melbourne crew. You&apos;ll only hear from us about this quote.
                     </p>
                   </form>
