@@ -45,7 +45,7 @@ const blogPosts = [
       'Is your garage a storage unit? Follow this weekend guide to sorting, donating and booking residential junk removal so you can park your car inside again.',
     date: 'Jul 10, 2026',
     category: 'Residential',
-    image: '/images/service-residential.webp?v=fridge-pile-20260919',
+    image: '/images/service-residential.jpg?v=wa-20261121',
     imageAlt: 'Fridge furniture and household junk on a Melbourne driveway for residential rubbish removal',
   },
 ];

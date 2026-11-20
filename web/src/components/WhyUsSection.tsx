@@ -29,7 +29,7 @@ export const WhyUsSection: React.FC = () => {
                   </div>
                   <div className="overflow-hidden min-h-0">
                     <img
-                      src="/images/services-original/residential.webp?v=fridge-pile-20260919"
+                      src="/images/services-original/residential.jpg?v=wa-20261121"
                       className="w-full h-full object-cover object-[center_65%] transform group-hover:scale-105 transition-transform duration-700"
                       alt="Fridge mattress chairs and furniture ready for Melbourne household rubbish removal"
                     />

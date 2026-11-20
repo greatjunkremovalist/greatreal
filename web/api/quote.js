@@ -129,119 +129,89 @@ function buildHtmlEmail({ name, email, phone, postcode, service, details, links,
 </body></html>`;
 }
 
-const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbxkjIprus6k4UCzH2JuFRCPi7ZVny9U_GgFPlA2VsI9TxMH0iyeEOIgVI3RSN4dlMI7/exec';
-const APPS_SCRIPT_SECRET = 'gjr-quote-mail-7f3a9c2e';
-
-async function sendViaAppsScript({ subject, replyTo, name, email, phone, postcode, service, details, links }) {
-  const response = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    redirect: 'manual',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({
-      secret: APPS_SCRIPT_SECRET,
-      name,
-      email,
-      phone,
-      postcode,
-      service,
-      details,
-      links,
-      subject,
-      replyTo,
-    }),
-  });
-
-  let resultResponse = response;
-  if (response.status >= 300 && response.status < 400) {
-    const location = response.headers.get('location');
-    if (!location) return false;
-    resultResponse = await fetch(location);
-  }
-
-  const data = await resultResponse.json().catch(() => null);
-  return Boolean(data?.ok);
+function buildPhotoAttachments(photoBuffers) {
+  const buffers = Array.isArray(photoBuffers) ? photoBuffers : [];
+  return buffers.map((buf, index) => ({
+    filename: buffers.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg',
+    content: Buffer.from(buf, 'base64'),
+    contentType: 'image/jpeg',
+    cid: `photo${index}@greatjunk`,
+  }));
 }
 
-async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers, name, email, phone, postcode, service, details, links }) {
-  try {
-    const sent = await sendViaAppsScript({
-      subject,
-      replyTo,
-      name,
-      email,
-      phone,
-      postcode,
-      service,
-      details,
-      links,
-    });
-    if (sent) return true;
-  } catch {
-    // Fall through to Titan or Resend if those credentials exist.
-  }
+function withInlinePhotos(html, attachments) {
+  if (!attachments.length) return html;
+  const inline = attachments
+    .map(
+      (att, index) =>
+        `<p style="margin:12px 0 0;"><img src="cid:${att.cid}" alt="Photo ${index + 1}" style="max-width:100%;border-radius:8px;" /></p>`,
+    )
+    .join('');
+  return html.replace('<!--INLINE_PHOTOS-->', inline);
+}
 
-  if (process.env.RESEND_API_KEY) {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: process.env.QUOTE_FROM_EMAIL || 'Great Junk Removalist <onboarding@resend.dev>',
-        to: [INFO_EMAIL],
+async function sendWithTransporter({ transporter, from, subject, html, text, replyTo, attachments }) {
+  await transporter.sendMail({
+    from,
+    to: INFO_EMAIL,
+    subject,
+    html: withInlinePhotos(html, attachments),
+    text,
+    replyTo: replyTo || undefined,
+    attachments,
+  });
+  return true;
+}
+
+async function sendHtmlToInfo({ subject, html, text, replyTo, photoBuffers }) {
+  const nodemailer = await import('nodemailer');
+  const attachments = buildPhotoAttachments(photoBuffers);
+
+  // 1) Prefer Titan / info@ business mailbox
+  const titanUser = process.env.SMTP_USER || process.env.TITAN_SMTP_USER || INFO_EMAIL;
+  const titanPass = process.env.SMTP_PASS || process.env.TITAN_SMTP_PASS;
+  if (titanPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.titan.email',
+        port: Number(process.env.SMTP_PORT || 465),
+        secure: String(process.env.SMTP_SECURE || 'true') !== 'false',
+        auth: { user: titanUser, pass: titanPass },
+      });
+      return await sendWithTransporter({
+        transporter,
+        from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${INFO_EMAIL}>`,
         subject,
         html,
         text,
-        reply_to: replyTo || undefined,
-      }),
-    });
-    if (!response.ok) throw new Error(await response.text());
-    return true;
+        replyTo,
+        attachments,
+      });
+    } catch {
+      // Fall through to Gmail SMTP.
+    }
   }
 
-  // info@ is on Titan — use Titan SMTP when credentials are set (HTML = blue links in Gmail app).
-  const user = process.env.SMTP_USER || process.env.TITAN_SMTP_USER;
-  const pass = process.env.SMTP_PASS || process.env.TITAN_SMTP_PASS;
-  if (user && pass) {
-    const nodemailer = await import('nodemailer');
+  // 2) Gmail SMTP also (App Password) — branded From name, delivers to info@
+  const gmailUser =
+    process.env.GMAIL_SMTP_USER || process.env.GMAIL_USER || 'yogeshmehta8950@gmail.com';
+  const gmailPass = process.env.GMAIL_SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
+  if (gmailPass) {
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.titan.email',
-      port: Number(process.env.SMTP_PORT || 465),
-      secure: String(process.env.SMTP_SECURE || 'true') !== 'false',
-      auth: { user, pass },
+      host: process.env.GMAIL_SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.GMAIL_SMTP_PORT || 465),
+      secure: true,
+      auth: { user: gmailUser, pass: gmailPass },
     });
-
-    const buffers = Array.isArray(photoBuffers) ? photoBuffers : [];
-    const attachments = buffers.map((buf, index) => ({
-      filename: buffers.length > 1 ? `image-${index + 1}.jpg` : 'image.jpg',
-      content: Buffer.from(buf, 'base64'),
-      contentType: 'image/jpeg',
-      cid: `photo${index}@greatjunk`,
-    }));
-
-    let htmlWithInline = html;
-    if (attachments.length) {
-      const inline = attachments
-        .map(
-          (att, index) =>
-            `<p style="margin:12px 0 0;"><img src="cid:${att.cid}" alt="Photo ${index + 1}" style="max-width:100%;border-radius:8px;" /></p>`,
-        )
-        .join('');
-      htmlWithInline = html.replace('<!--INLINE_PHOTOS-->', inline);
-    }
-
-    await transporter.sendMail({
-      from: process.env.QUOTE_FROM_EMAIL || `"Great Junk Removalist" <${user}>`,
-      to: INFO_EMAIL,
+    return sendWithTransporter({
+      transporter,
+      from: `"Great Junk Removalist" <${gmailUser}>`,
       subject,
-      html: htmlWithInline,
+      html,
       text,
-      replyTo: replyTo || undefined,
+      replyTo: replyTo || INFO_EMAIL,
       attachments,
     });
-    return true;
   }
 
   return false;
@@ -308,13 +278,6 @@ export default async function handler(req, res) {
           text,
           replyTo: email || INFO_EMAIL,
           photoBuffers: photos.map((photo) => photo.data),
-          name,
-          email,
-          phone,
-          postcode,
-          service,
-          details,
-          links,
         });
       } catch {
         emailed = false;

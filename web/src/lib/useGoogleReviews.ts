@@ -33,7 +33,8 @@ export function useGoogleReviews(refreshKey = 0): GoogleReviewsPayload {
     };
 
     load();
-    const timer = window.setInterval(load, 30 * 60 * 1000);
+    // Poll often so new Google reviews appear on the site within seconds.
+    const timer = window.setInterval(load, 20 * 1000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);

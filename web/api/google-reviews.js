@@ -8,8 +8,9 @@ const PLACE_ID = 'ChIJz4dwVMJL1moRa3AgGtIom4s';
 const MAPS_URL = PUBLISHED_GOOGLE_REVIEWS.mapsUrl;
 const WRITE_REVIEW_URL = PUBLISHED_GOOGLE_REVIEWS.writeReviewUrl;
 
-const LIVE_TTL_MS = 6 * 60 * 60 * 1000;
-const RETRY_TTL_MS = 30 * 60 * 1000;
+/** Refresh live Google reviews quickly so new ratings show on the site in seconds. */
+const LIVE_TTL_MS = 20 * 1000;
+const RETRY_TTL_MS = 30 * 1000;
 let cachedPayload = null;
 let cachedAt = 0;
 let cacheTtl = LIVE_TTL_MS;
@@ -243,7 +244,7 @@ export default async function handler(req, res) {
   }
 
   if (cachedPayload && Date.now() - cachedAt < cacheTtl) {
-    sendJson(res, 200, cachedPayload, Math.max(60, Math.round(cacheTtl / 1000)));
+    sendJson(res, 200, cachedPayload, Math.max(15, Math.round(cacheTtl / 1000)));
     return;
   }
 
@@ -283,5 +284,5 @@ export default async function handler(req, res) {
   cachedPayload = payload;
   cachedAt = Date.now();
   cacheTtl = hasLiveReviews ? LIVE_TTL_MS : RETRY_TTL_MS;
-  sendJson(res, 200, payload, hasLiveReviews ? 21600 : 900);
+  sendJson(res, 200, payload, hasLiveReviews ? 20 : 30);
 }

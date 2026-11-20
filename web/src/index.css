@@ -7,6 +7,12 @@
   }
 }
 
+@layer utilities {
+  .font-display {
+    font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+}
+
 @keyframes progressBar {
   0% {
     width: 0%;
