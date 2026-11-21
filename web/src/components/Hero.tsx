@@ -135,28 +135,31 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
 
             <div
-              className="relative z-10 text-white text-center lg:text-left space-y-7 sm:space-y-8 px-4 sm:px-8 lg:px-8 pt-9 sm:pt-12 pb-2 sm:pb-3 lg:py-8"
+              className="relative z-10 text-white text-center lg:text-left space-y-6 sm:space-y-7 px-4 sm:px-8 lg:px-8 pt-9 sm:pt-12 pb-3 sm:pb-4 lg:py-8"
               style={{
                 textShadow:
                   '0 2px 4px rgba(0,0,0,0.85), 0 4px 14px rgba(0,0,0,0.65), 0 0 2px rgba(0,0,0,0.9)',
               }}
             >
-              <h1 className="font-display text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold tracking-[-0.02em] leading-[1.35]">
-                Rubbish Removal<br /> Melbourne VIC
+              <h1 className="font-display text-[2.55rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold tracking-[-0.02em] leading-[1.12]">
+                Rubbish Removal<br />Melbourne VIC
               </h1>
-              <div className="space-y-5 sm:space-y-6 text-xl sm:text-2xl lg:text-[1.75rem] text-white font-bold leading-[1.7] max-w-xl mx-auto lg:mx-0">
-                <p className="whitespace-nowrap text-[clamp(1.2rem,4.4vw,1.75rem)] leading-[1.7]">
+              {/* Match WhatsApp SS: airy gaps between lines; “removed” forced on line 1 */}
+              <div className="space-y-4 sm:space-y-5 text-[clamp(1.05rem,3.9vw,1.75rem)] sm:text-2xl lg:text-[1.75rem] text-white font-bold leading-[1.45] max-w-xl mx-auto lg:mx-0">
+                <p className="whitespace-nowrap leading-[1.45]">
                   Hassle-free low cost junk removal.
                 </p>
-                <p className="leading-[1.7]">Committed to zero to landfill.</p>
-                <p className="leading-[1.7] text-[clamp(1.05rem,3.6vw,1.75rem)] whitespace-normal">
-                  All residential &amp; commercial rubbish removed
-                  <br className="block" />
+                <p className="leading-[1.45]">Committed to zero to landfill.</p>
+                <p className="leading-[1.45] text-[clamp(0.92rem,3.2vw,1.75rem)]">
+                  <span className="whitespace-nowrap">
+                    All residential &amp; commercial rubbish removed
+                  </span>
+                  <br />
                   in Melbourne VIC &amp; surrounding areas.
                 </p>
               </div>
               <p
-                className="text-[#84d800] font-black text-3xl sm:text-4xl tracking-tight leading-[1.35] pt-2"
+                className="text-[#84d800] font-black text-3xl sm:text-4xl tracking-tight leading-[1.2] pt-0.5"
                 style={{
                   textShadow:
                     '0 2px 4px rgba(0,0,0,0.9), 0 4px 16px rgba(0,0,0,0.7), 0 0 3px rgba(0,0,0,1)',
