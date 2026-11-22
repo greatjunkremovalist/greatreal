@@ -22,16 +22,16 @@ export const WhyUsSection: React.FC = () => {
                 <div className="grid grid-rows-2 w-full h-full gap-0.5 bg-white">
                   <div className="overflow-hidden min-h-0">
                     <img
-                      src="/images/lounge-junk-before.jpg?v=sofa-pile-20260919"
-                      className="w-full h-full object-cover object-[center_60%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Sofa armchair carpet and TV on a Melbourne driveway ready for residential junk removal"
+                      src="/images/services-original/cleanups.jpg?v=real-20261123"
+                      className="w-full h-full object-cover object-[center_45%] transform group-hover:scale-105 transition-transform duration-700"
+                      alt="Household junk pile with boxes carpet and furniture ready for Melbourne rubbish removal"
                     />
                   </div>
                   <div className="overflow-hidden min-h-0">
                     <img
-                      src="/images/services-original/residential.webp?v=fridge-pile-20260919"
-                      className="w-full h-full object-cover object-[center_65%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Fridge mattress chairs and furniture ready for Melbourne household rubbish removal"
+                      src="/images/service-residential.jpg?v=wa-20261121"
+                      className="w-full h-full object-cover object-[center_55%] transform group-hover:scale-105 transition-transform duration-700"
+                      alt="Sofa TVs and furniture in a Melbourne home ready for residential junk removal"
                     />
                   </div>
                 </div>

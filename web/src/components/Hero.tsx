@@ -150,12 +150,12 @@ export const Hero: React.FC<HeroProps> = ({
                   Hassle-free low cost junk removal.
                 </p>
                 <p className="leading-[1.45]">Committed to zero to landfill.</p>
-                <p className="leading-[1.45] text-[clamp(0.92rem,3.2vw,1.75rem)]">
+                <p className="leading-[1.15]">
                   <span className="whitespace-nowrap">
                     All residential &amp; commercial rubbish removed
                   </span>
                   <br />
-                  in Melbourne VIC &amp; surrounding areas.
+                  in Melbourne &amp; surrounding areas.
                 </p>
               </div>
               <p

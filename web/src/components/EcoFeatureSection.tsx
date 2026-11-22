@@ -20,16 +20,16 @@ export const EcoFeatureSection: React.FC = () => {
                 <div className="grid grid-cols-2 w-full h-full gap-0.5 bg-white">
                   <div className="overflow-hidden">
                     <img
-                      src="/images/garage-clean-before.jpg?v=ai-20260919"
+                      src="/images/service-cardboard.jpg?v=wa-20261121"
                       className="w-full h-full object-cover object-[center_40%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Cluttered Melbourne garage before professional junk and rubbish removal"
+                      alt="Packed Melbourne garage full of cardboard boxes ready for junk removal"
                     />
                   </div>
                   <div className="overflow-hidden">
                     <img
-                      src="/images/garden-waste-before.jpg?v=ai-20260919"
-                      className="w-full h-full object-cover object-[center_45%] transform group-hover:scale-105 transition-transform duration-700"
-                      alt="Garden green waste pile for eco-friendly rubbish removal in Melbourne"
+                      src="/images/service-greenwaste.jpg?v=wa-20261121"
+                      className="w-full h-full object-cover object-[center_55%] transform group-hover:scale-105 transition-transform duration-700"
+                      alt="Garden green waste and branches ready for Melbourne green waste removal"
                     />
                   </div>
                 </div>
