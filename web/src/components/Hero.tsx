@@ -144,14 +144,16 @@ export const Hero: React.FC<HeroProps> = ({
               <h1 className="font-display text-[2.55rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold tracking-[-0.02em] leading-[1.12]">
                 Rubbish Removal<br />Melbourne VIC
               </h1>
-              {/* Same size; keep “rubbish removed” together so it never clips off-screen */}
+              {/* Exactly two lines: “…rubbish removed” / “in Melbourne…” */}
               <div className="space-y-4 sm:space-y-5 text-[clamp(1.05rem,3.9vw,1.75rem)] sm:text-2xl lg:text-[1.75rem] text-white font-bold leading-[1.45] max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
                 <p className="whitespace-nowrap leading-[1.45]">
                   Hassle-free low cost junk removal.
                 </p>
                 <p className="leading-[1.45]">Committed to zero to landfill.</p>
                 <p className="leading-[1.15] mx-auto lg:mx-0">
-                  All residential &amp; commercial rubbish&nbsp;removed
+                  <span className="inline-block max-w-full whitespace-nowrap tracking-[-0.02em] [font-size:clamp(0.88rem,4.4vw,1em)] sm:tracking-normal sm:[font-size:1em]">
+                    All residential &amp; commercial rubbish removed
+                  </span>
                   <br />
                   in Melbourne &amp; surrounding areas.
                 </p>
