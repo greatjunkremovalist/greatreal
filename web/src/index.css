@@ -73,4 +73,19 @@
   animation: gjr-fade-slide 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Hero residential line — always one wrap (never 3 lines on phones) */
+.hero-res-line {
+  display: block;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+  font-size: clamp(0.7rem, 3.45vw, 1em);
+}
+
+@media (min-width: 640px) {
+  .hero-res-line {
+    font-size: 1em;
+    letter-spacing: normal;
+  }
+}
+
 
