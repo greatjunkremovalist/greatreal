@@ -150,13 +150,12 @@ export const Hero: React.FC<HeroProps> = ({
                   Hassle-free low cost junk removal.
                 </p>
                 <p className="leading-[1.45]">Committed to zero to landfill.</p>
-                <p className="leading-[1.15] mx-auto lg:mx-0 text-center lg:text-left">
-                  <span className="hero-res-line mx-auto lg:mx-0">
-                    All{'\u00A0'}residential{'\u00A0'}&amp;{'\u00A0'}commercial{'\u00A0'}rubbish{'\u00A0'}removed
+                <p className="leading-[1.15] mx-auto lg:mx-0">
+                  <span className="inline-block max-w-full whitespace-nowrap tracking-[-0.02em] [font-size:clamp(0.88rem,4.4vw,1em)] sm:tracking-normal sm:[font-size:1em]">
+                    All residential &amp; commercial rubbish removed
                   </span>
-                  <span className="block">
-                    in Melbourne &amp; surrounding areas.
-                  </span>
+                  <br />
+                  in Melbourne &amp; surrounding areas.
                 </p>
               </div>
               <p
