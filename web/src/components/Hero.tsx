@@ -122,8 +122,8 @@ export const Hero: React.FC<HeroProps> = ({
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 pt-0 sm:pt-0 pb-12 sm:pb-16 lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-14 items-start">
           {/* Left: junk photo only behind this text area (not under the form) */}
-          <div className="relative lg:col-span-5 overflow-hidden -mx-5 sm:-mx-8 lg:mx-0 lg:rounded-2xl">
-            <div className="absolute inset-0">
+          <div className="relative lg:col-span-5 -mx-5 sm:-mx-8 lg:mx-0 lg:rounded-2xl">
+            <div className="absolute inset-0 overflow-hidden lg:rounded-2xl">
               <img
                 src="/images/hero-junk-pile.jpg?v=wa-20261121"
                 alt=""
@@ -144,16 +144,14 @@ export const Hero: React.FC<HeroProps> = ({
               <h1 className="font-display text-[2.55rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold tracking-[-0.02em] leading-[1.12]">
                 Rubbish Removal<br />Melbourne VIC
               </h1>
-              {/* Match WhatsApp SS: airy gaps between lines; “removed” forced on line 1 */}
-              <div className="space-y-4 sm:space-y-5 text-[clamp(1.05rem,3.9vw,1.75rem)] sm:text-2xl lg:text-[1.75rem] text-white font-bold leading-[1.45] max-w-xl mx-auto lg:mx-0">
+              {/* Same size; keep “rubbish removed” together so it never clips off-screen */}
+              <div className="space-y-4 sm:space-y-5 text-[clamp(1.05rem,3.9vw,1.75rem)] sm:text-2xl lg:text-[1.75rem] text-white font-bold leading-[1.45] max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
                 <p className="whitespace-nowrap leading-[1.45]">
                   Hassle-free low cost junk removal.
                 </p>
                 <p className="leading-[1.45]">Committed to zero to landfill.</p>
-                <p className="leading-[1.15]">
-                  <span className="whitespace-nowrap">
-                    All residential &amp; commercial rubbish removed
-                  </span>
+                <p className="leading-[1.15] mx-auto lg:mx-0">
+                  All residential &amp; commercial rubbish&nbsp;removed
                   <br />
                   in Melbourne &amp; surrounding areas.
                 </p>
